@@ -137,7 +137,7 @@ elif argv[1] == 'CkCompromise':
     partial(prioritize, [
       r(r'!KU\( prefix\(hkdf\(.+\'chain_key\'[\s\)]*@ #\w+(\.\d+)?$'),
       r(r'^\(*last'),
-      r(r'CompromisedChainKey\( \$Me,.+= chainKey.+CompromisedChainKey\( \$Them,.+chainKey'),
+      r(r'RevealChainKey\( \$Me,.+= chainKey.+RevealChainKey\( \$Them,.+chainKey'),
       '∀',
 
       when_then(
@@ -323,9 +323,9 @@ elif argv[1] == 'Secrecy':
       r(r'SessionSecrets\(.+@ #t$'),
       '!KU( ~msg )',
       'PQAttack',
-      'CompromisedECDHKey',
-      'CompromisedKemKey',
-      r(r'Compromised(Chain|Message)Key\('),
+      'RevealECDHKey',
+      'RevealKemKey',
+      r(r'Reveal(Chain|Message)Key\('),
     ]),
   )
 elif argv[1] in ['RootKeyConnectionSend', 'RootKeyConnectionReceive']:

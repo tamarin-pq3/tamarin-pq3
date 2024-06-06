@@ -79,56 +79,56 @@ rule UserKeyGen[color=#FDFD96]:
 rule IdentityKeyLeak[color=#FF6961]:
   [ !IdentityKey($A, ~idKey) ]
   --[ SomeCompromise()
-    , CompromisedIdentityKey($A) ]->
+    , RevealIdentityKey($A) ]->
   [ Out(~idKey) ]
 
 rule ECDHPreKeyLeak[color=#FF6961]:
   [ !ECDHPreKey($A, ~preKey) ]
   --[ SomeCompromise()
-    , CompromisedECDHPreKey($A, 'g'^~preKey) ]->
+    , RevealECDHPreKey($A, 'g'^~preKey) ]->
   [ Out(~preKey) ]
 
 rule ECDHKeyLeak[color=#FF6961]:
   [ !ECDHKey(~id, $A, ~ecdhSk) ]
   --[ SomeCompromise()
-    , CompromisedECDHKey(~id, $A, 'g'^~ecdhSk) ]->
+    , RevealECDHKey(~id, $A, 'g'^~ecdhSk) ]->
   [ Out(~ecdhSk) ]
 
 rule KemPreKeyLeak[color=#FF6961]:
   [ !KemPreKey($A, ~sk) ]
   --[ SomeCompromise()
-    , CompromisedKemPreKey($A, pqpk(~sk)) ]->
+    , RevealKemPreKey($A, pqpk(~sk)) ]->
   [ Out(~sk) ]
 
 rule KemKeyLeak[color=#FF6961]:
   [ !KemKey($A, ~kemKey) ]
   --[ SomeCompromise()
-    , CompromisedKemKey($A, pqpk(~kemKey)) ]->
+    , RevealKemKey($A, pqpk(~kemKey)) ]->
   [ Out(~kemKey) ]
 
 rule RootKeyLeak[color=#FF6961]:
   [ !RootKey(~id, i, $A, kemSS, rk) ]
   --[ SomeCompromise()
-    , CompromisedRootKey($A, kemSS, rk) ]->
+    , RevealRootKey($A, kemSS, rk) ]->
     [ Out(rk) ]
 
 rule ChainKeyLeak[color=#FF6961]:
   [ !ChainKey(~id, i, $A, ck) ]
   --[ SomeCompromise()
-    , CompromisedChainKey($A, ck) ]->
+    , RevealChainKey($A, ck) ]->
   [ Out(ck) ]
 
 // Provable (auto)
-lemma ChainKeySources[sources]:
+lemma Auto_ChainKeySources[sources]:
 " All p t #x.
-        CompromisedChainKey(p, t) @ #x
+        RevealChainKey(p, t) @ #x
     ==> ( (Ex t1 t2. t = hkdf(t1, t2) & t2 = 'chain_key')
         | (Ex t1 t2 t3. t = suffix(hkdf(hkdf(t1, t2), t3))))"
 
 rule MessageKeyLeak[color=#FF6961]:
   [ !MessageKey(~id, i, $A, mk) ]
   --[ SomeCompromise()
-    , CompromisedMessageKey($A, mk) ]->
+    , RevealMessageKey($A, mk) ]->
   [ Out(mk) ]
 
 // TODO: I could non-deterministically model that the signature is invalid. The
@@ -610,10 +610,10 @@ lemma ECDHSSCompromise[reuse]:
         ( SessionInfo(id, i, me, them) @ #t1
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk) @ #t1
         & KU(ecdhSS) @ #t2 )
-    ==> ( (Ex #x. CompromisedECDHPreKey(them, theirPk) @ #x)
-        | (Ex #x. CompromisedECDHKey(id, me, myPk) @ #x)
-        | (Ex id2 #x. CompromisedECDHKey(id2, them, theirPk) @ #x)
-        | (Ex #x. CompromisedIdentityKey(them) @ #x & #x < #t1)
+    ==> ( (Ex #x. RevealECDHPreKey(them, theirPk) @ #x)
+        | (Ex #x. RevealECDHKey(id, me, myPk) @ #x)
+        | (Ex id2 #x. RevealECDHKey(id2, them, theirPk) @ #x)
+        | (Ex #x. RevealIdentityKey(them) @ #x & #x < #t1)
         | (Ex #x. PQAttack() @ #x))"
 
 // Provable (auto)
@@ -713,11 +713,11 @@ lemma KemSSCompromise[reuse,hide_lemma=ECDHSSCompromise,hide_lemma=ECDHSkOrigin,
         ( SessionInfo(id, i, me, them) @ #t1
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk) @ #t1
         & KU(kemSS) @ #t2)
-    ==> ( (Ex #x. CompromisedKemKey(me, encapPk) @ #x)
-        | (Ex #x. CompromisedKemKey(them, encapPk) @ #x)
-        | (Ex #x. CompromisedKemPreKey(me, encapPk) @ #x)
-        | (Ex #x. CompromisedKemPreKey(them, encapPk) @ #x)
-        | (Ex #x. CompromisedIdentityKey(them) @ #x & #x < #t1))"
+    ==> ( (Ex #x. RevealKemKey(me, encapPk) @ #x)
+        | (Ex #x. RevealKemKey(them, encapPk) @ #x)
+        | (Ex #x. RevealKemPreKey(me, encapPk) @ #x)
+        | (Ex #x. RevealKemPreKey(them, encapPk) @ #x)
+        | (Ex #x. RevealIdentityKey(them) @ #x & #x < #t1))"
 
 // Provable (manually). Be careful in cases of the symmetric ratchet.
 lemma CkCompromise[reuse,use_induction,hide_lemma=ECDHSkOrigin,hide_lemma=MyKemKeyOrigin,
@@ -727,9 +727,9 @@ lemma CkCompromise[reuse,use_induction,hide_lemma=ECDHSkOrigin,hide_lemma=MyKemK
         ( SessionInfo(id, li, me, them) @ #t1
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk) @ #t1
         & KU(ck) @ #t2)
-    ==> ( (Ex ckC #x. CompromisedChainKey(me, ckC) @ #x
+    ==> ( (Ex ckC #x. RevealChainKey(me, ckC) @ #x
             & (ckC << ck | ckC = ck))
-        | (Ex ckC #x. CompromisedChainKey(them, ckC) @ #x
+        | (Ex ckC #x. RevealChainKey(them, ckC) @ #x
             & (ckC << ck | ckC = ck))
         | (Ex rkCK #x. rk = prefix(rkCK) & !KU(rkCK) @ #x))"
 
@@ -748,8 +748,8 @@ lemma RkSecretCompromiseECDH[reuse,hide_lemma=CkCompromise,hide_lemma=SessionSta
         ( SessionInfo(id, li, me, them) @ #t1
         & KeysUsed(theirIdPk, myEcdhPk, theirEcdhPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck, mk) @ #t1
         & KU(rkCK) @ #t2)
-    ==> ( (Ex #x. CompromisedChainKey(me, suffix(rkCK)) @ #x)
-        | (Ex #x. CompromisedChainKey(them, suffix(rkCK)) @ #x)
+    ==> ( (Ex #x. RevealChainKey(me, suffix(rkCK)) @ #x)
+        | (Ex #x. RevealChainKey(them, suffix(rkCK)) @ #x)
         | (Ex #x. !KU(ecdhSS) @ #x))"
 
 // Provable (auto)
@@ -763,8 +763,8 @@ lemma RkSecretCompromiseKemSS[reuse,use_induction,hide_lemma=SessionStart,hide_l
         & KeysUsed(theirIdPk, myEcdhPk, theirEcdhPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck, mk) @ #t1
         & KU(rkCK) @ #t2)
     ==> ( (Ex #x. !KU(kemSS) @ #x)
-        | (Ex rk #x. CompromisedRootKey(me, kemSS, rk) @ #x)
-        | (Ex rk #x. CompromisedRootKey(them, kemSS, rk) @ #x))"
+        | (Ex rk #x. RevealRootKey(me, kemSS, rk) @ #x)
+        | (Ex rk #x. RevealRootKey(them, kemSS, rk) @ #x))"
 
 // Provable (auto)
 // NOTE: This lemma is very close the ChainKeyMonotonicity, but I need this form
@@ -789,8 +789,8 @@ lemma MkCompromise[reuse,use_induction,hide_lemma=SessionStart,hide_lemma=Sessio
         & SessionSecrets(myEcdhPk, theirEcdhPk, kemSS, encapPk, chainKey, msgKey) @ #t1
         & !KU(msgKey) @ #t2)
     ==> ( (Ex #x. !KU(chainKey) @ #x)
-        | (Ex #x. CompromisedMessageKey(me, msgKey) @ #x)
-        | (Ex #x. CompromisedMessageKey(them, msgKey) @ #x))"
+        | (Ex #x. RevealMessageKey(me, msgKey) @ #x)
+        | (Ex #x. RevealMessageKey(them, msgKey) @ #x))"
 
 // Provable (auto)
 lemma Secrecy[hide_lemma=SessionStart,hide_lemma=SessionStartUnique,hide_lemma=ECDHSkOrigin,
@@ -803,32 +803,32 @@ lemma Secrecy[hide_lemma=SessionStart,hide_lemma=SessionStartUnique,hide_lemma=E
         & SessionSecrets(myEcdhPk, theirEcdhPk, kemSS, encapPk, chainKey, msgKey) @ #t)
           // ...it remains confidential...
     ==>   (not Ex #x. K(msg) @ #x)
-        | (Ex #x. CompromisedMessageKey(me, msgKey) @ #x)
-        | (Ex #x. CompromisedMessageKey(them, msgKey) @ #x)
-        | (Ex ckC #x. CompromisedChainKey(me, ckC) @ #x
+        | (Ex #x. RevealMessageKey(me, msgKey) @ #x)
+        | (Ex #x. RevealMessageKey(them, msgKey) @ #x)
+        | (Ex ckC #x. RevealChainKey(me, ckC) @ #x
             & (ckC << chainKey | ckC = chainKey))
-        | (Ex ckC #x. CompromisedChainKey(them, ckC) @ #x
+        | (Ex ckC #x. RevealChainKey(them, ckC) @ #x
             & (ckC << chainKey | ckC = chainKey))
           // ...OR one of the long-term identity keys were compromised
-        | (Ex #x. CompromisedIdentityKey(them) @ #x & #x < #t)
+        | (Ex #x. RevealIdentityKey(them) @ #x & #x < #t)
           // ...OR one ECDH key AND the KEM SS was compromised
         | ( ( (Ex #x. PQAttack() @ #x)
               // One ECDH key was compromised means that either the peer's ECDH
               // pre-key was compromised...
-            | (Ex #x. CompromisedECDHPreKey(them, theirEcdhPk) @ #x)
+            | (Ex #x. RevealECDHPreKey(them, theirEcdhPk) @ #x)
               // ...OR one of the ECDH keys that were used in the latest public key
               // ratchet was compromised.
-            | (Ex #x. CompromisedECDHKey(id, me, myEcdhPk) @ #x)
-            | (Ex id2 #x. CompromisedECDHKey(id2, them, theirEcdhPk) @ #x))
+            | (Ex #x. RevealECDHKey(id, me, myEcdhPk) @ #x)
+            | (Ex id2 #x. RevealECDHKey(id2, them, theirEcdhPk) @ #x))
           & // The KEM SS being compromised means that the recently used KEM
             // encapsulation key was compromised...
-            ( (Ex #x. CompromisedKemKey(me, encapPk) @ #x)
-            | (Ex #x. CompromisedKemKey(them, encapPk) @ #x)
+            ( (Ex #x. RevealKemKey(me, encapPk) @ #x)
+            | (Ex #x. RevealKemKey(them, encapPk) @ #x)
               // ...OR the initial recipient's KEM pre key was compromised.
-            | (Ex #x. CompromisedKemPreKey(me, encapPk) @ #x)
-            | (Ex #x. CompromisedKemPreKey(them, encapPk) @ #x)
-            | (Ex rk #x. CompromisedRootKey(me, kemSS, rk) @ #x)
-            | (Ex rk #x. CompromisedRootKey(them, kemSS, rk) @ #x)))"
+            | (Ex #x. RevealKemPreKey(me, encapPk) @ #x)
+            | (Ex #x. RevealKemPreKey(them, encapPk) @ #x)
+            | (Ex rk #x. RevealRootKey(me, kemSS, rk) @ #x)
+            | (Ex rk #x. RevealRootKey(them, kemSS, rk) @ #x)))"
 
 /* AUTHENTICATION BELOW */
 
@@ -845,7 +845,7 @@ lemma NoninjectiveAuthentication [hide_lemma=SessionStartUnique,hide_lemma=ECDHS
   "All id i s r m #t.
         MessageReceived(id, i, s, r, m) @ #t
     ==>   (Ex id_ #x. MessageSent(id_, i, s, r, m) @ #x & #x < #t)
-        | (Ex #x. CompromisedIdentityKey(s) @ #x & #x < #t)"
+        | (Ex #x. RevealIdentityKey(s) @ #x & #x < #t)"
 
 // Provable (auto)
 lemma InjectiveMessageReceived[hide_lemma=ECDHSSCompromise,
@@ -862,7 +862,7 @@ lemma InjectiveMessageReceived[hide_lemma=ECDHSSCompromise,
         & SessionSecrets(rEcdhPk2, sEcdhPk2, kemSS2, encapPk2, chainKey2, msgKey2) @ #t2)
     ==> ( (#t1 = #t2)
         | (rEcdhPk1 = rEcdhPk2 & msgKey1 = msgKey2 & s1 = s2 & r1 = r2 & Ex #x. ECDHPreKeyGen(r1, rEcdhPk1) @ #x)
-        | (Ex #x. CompromisedIdentityKey(s1) @ #x & #x < #t1)
-        | (Ex #x. CompromisedIdentityKey(s2) @ #x & #x < #t2))"
+        | (Ex #x. RevealIdentityKey(s1) @ #x & #x < #t1)
+        | (Ex #x. RevealIdentityKey(s2) @ #x & #x < #t2))"
 
 end
