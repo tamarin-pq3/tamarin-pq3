@@ -33,7 +33,7 @@ functions:  hkdf/2,   // intended use: hkdf(entropy, <info, salt>) or hkdf(entro
 
 equations: concat(prefix(x), suffix(x)) = x
 
-// KEM
+// Kyber KEM
 functions: pqpk/1, encap/2, decap/2
 equations: decap(encap(k, pqpk(sk)), sk) = k
 
@@ -57,17 +57,17 @@ restriction PQAttacker:
 rule UserKeyGen[color=#FDFD96]:
   let idPk = pk(~idKey)
       ecdhPk = 'g'^~preKey
-      kemPk = pqpk(~kemPreKey)
+      kemPk = pqpk(~kyberPreKey)
       sig = sign(<'nf_reg', kemPk, ecdhPk>, ~idKey)
   in
-  [ Fr(~idKey), Fr(~preKey), Fr(~kemPreKey) ]
+  [ Fr(~idKey), Fr(~preKey), Fr(~kyberPreKey) ]
   --[ PrePQAttack()
     , OnlyOnce(<'setup', $A>)
     , ECDHPreKeyGen($A, 'g'^~preKey)
-    , KemPreKeyGen($A, pqpk(~kemPreKey)) ]->
+    , KemPreKeyGen($A, pqpk(~kyberPreKey)) ]->
   [ !IdentityKey($A, ~idKey)
   , !ECDHPreKey($A, ~preKey)
-  , !KemPreKey($A, ~kemPreKey)
+  , !KemPreKey($A, ~kyberPreKey)
   , Out(idPk), Out(ecdhPk), Out(kemPk), Out(sig)
   , !IDSIdentityData($A, idPk)
   , !IDSClientData($A, ecdhPk, kemPk, sig)
@@ -133,10 +133,10 @@ rule MessageKeyLeak[color=#FF6961]:
 // spec doesn't say, though, what should happen if this were the case.
 rule QueryIDS[color=#FDFD96]:
   [ !IDSIdentityData($A, idPk)
-  , !IDSClientData($A, prePk, kemPrePk, preKeySig) ]
+  , !IDSClientData($A, prePk, kyberPrePk, preKeySig) ]
   --[ PrePQAttack()
-    , Eq(verify(preKeySig, <'nf_reg', kemPrePk, prePk>, idPk), true) ]->
-  [ IDSQuery($A, idPk, prePk, kemPrePk, preKeySig) ]
+    , Eq(verify(preKeySig, <'nf_reg', kyberPrePk, prePk>, idPk), true) ]->
+  [ IDSQuery($A, idPk, prePk, kyberPrePk, preKeySig) ]
 
 /* ---- GENERAL DOCUMENTATION ---- */
 
@@ -160,8 +160,8 @@ rule QueryIDS[color=#FDFD96]:
       // value (when initially sender), and updated on each public key ratchet.
       // ratchet.
       ~ecdhSk,
-      // The KEM secret key of $Me.
-      ~kemSk,
+      // The Kyber KEM secret key of $Me.
+      ~kyberSk,
       // The participant that $Me has a session with.
       $Them,
       // $Them's ID public key. Will be retrieved from the IDS data facts.
@@ -170,7 +170,7 @@ rule QueryIDS[color=#FDFD96]:
       theirEcdhPk,
       // $Them's last KEM public key (of type maybe)
       maybeTheirKemPk,
-      // $Them's new KEM public key. $Them might have included this key
+      // $Them's new Kyber KEM public key. $Them might have included this key
       // when they last performed the public key ratchet becoming a sender. We
       // need to keep this key until $Me becomes sender again and will include a
       // fresh KEM shared secret.
@@ -190,7 +190,7 @@ rule QueryIDS[color=#FDFD96]:
 rule SessionStartAsASender[color=#B4D9EF]:
   let dst             = <$Me, pk(~idKey), $Them, theirIdPk>
       ecdhSS          = theirEcdhPk^~ecdhSk
-      kemPublicKey    = pqpk(~kemSk)
+      kemPublicKey    = pqpk(~kyberSk)
       kemEncap        = encap(~kemSS, theirKemPk)
       rkCK            = hkdf(hkdf(hkdf(ecdhSS, '0'), ~kemSS), dst)
       chainKey        = suffix(rkCK)
@@ -204,24 +204,24 @@ rule SessionStartAsASender[color=#B4D9EF]:
   in
   [ Fr(~id)
   , !IdentityKey($Me, ~idKey)
-  , !KemPreKey($Me, ~kemSk)
+  , !KemPreKey($Me, ~kyberSk)
   , IDSQuery($Them, theirIdPk, theirEcdhPk, theirKemPk, preKeySig)
   , Fr(~msg), Fr(~ecdhSk), Fr(~kemSS) ]
   --[ PrePQAttack()
     , SessionInfo(~id, %1, $Me, $Them)
     , IdentityKeyQueried(~id, $Them, theirIdPk)
     , SessionStart(theirIdPk)
-    , PublicKeyRatchet(theirIdPk, 'g'^~ecdhSk, theirEcdhPk, ecdhSS, pqpk(~kemSk), Just(theirKemPk), None, ~kemSS, theirKemPk, prefix(rkCK))
+    , PublicKeyRatchet(theirIdPk, 'g'^~ecdhSk, theirEcdhPk, ecdhSS, pqpk(~kyberSk), Just(theirKemPk), None, ~kemSS, theirKemPk, prefix(rkCK))
     , PKRatchet()
     , ToSender()
     , MessageSent(~id, %1, $Me, $Them, ~msg)
     , SessionSecrets('g'^~ecdhSk, theirEcdhPk, ~kemSS, theirKemPk, chainKey, msgKey)
-    , KeysUsed(theirIdPk, 'g'^~ecdhSk, theirEcdhPk, ecdhSS, pqpk(~kemSk), Just(theirKemPk), None, ~kemSS, theirKemPk, prefix(rkCK), chainKey, msgKey)
+    , KeysUsed(theirIdPk, 'g'^~ecdhSk, theirEcdhPk, ecdhSS, pqpk(~kyberSk), Just(theirKemPk), None, ~kemSS, theirKemPk, prefix(rkCK), chainKey, msgKey)
     , ECDHKeyGen(~id, $Me, $Them, 'g'^~ecdhSk)
     , NewKemSS(~id, $Me, $Them, ~kemSS, theirKemPk)
     , NewKemPublicKey(~id, $Me, $Them, Just(theirKemPk)) ]->
   [ Out(<ciphertext, signature, 'g'^~ecdhSk, %1, msgKeyIndicator, None, Just(kemEncap), Just(preKeyHash)>)
-  , Session(~id, %1, 'S', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk, theirEcdhPk, Just(theirKemPk), None /* maybeTheirNewKemPk */, ~kemSS, theirKemPk, prefix(rkCK), nextChainKey)
+  , Session(~id, %1, 'S', $Me, ~ecdhSk, ~kyberSk, $Them, theirIdPk, theirEcdhPk, Just(theirKemPk), None /* maybeTheirNewKemPk */, ~kemSS, theirKemPk, prefix(rkCK), nextChainKey)
   , Out('g'^~ecdhSk)
   , !NonPQSecKey(~ecdhSk)
   , !RootKey(~id, %1, $Me, ~kemSS, prefix(rkCK))
@@ -271,7 +271,7 @@ rule ReceiverStart[color=#B4D9EF]:
   , !IdentityKey($Me, ~idKey)
   , !ECDHPreKey($Me, ~ecdhSk)
   , !KemPreKey($Me, ~kemSk)
-  , IDSQuery($Them, theirIdPk, sprePk, skemPrePk, preKeySig) ]
+  , IDSQuery($Them, theirIdPk, sprePk, skyberPrePk, preKeySig) ]
   --[ PrePQAttack()
     , Neq(theirEcdhPk, DH_neutral)
     , Neq(theirEcdhPk, 'g')
