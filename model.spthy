@@ -131,8 +131,6 @@ rule MessageKeyLeak[color=#FF6961]:
     , RevealMessageKey($A, mk) ]->
   [ Out(mk) ]
 
-// TODO: I could non-deterministically model that the signature is invalid. The
-// spec doesn't say, though, what should happen if this were the case.
 rule QueryIDS[color=#FDFD96]:
   [ !IDSIdentityData($A, idPk)
   , !IDSClientData($A, prePk, kemPrePk, preKeySig) ]
@@ -142,10 +140,7 @@ rule QueryIDS[color=#FDFD96]:
 
 /* ---- GENERAL DOCUMENTATION ---- */
 
-// First a comment on how the session state is modelled. The specification
-// defines that a paricipant has one "outgoing chain", and multiple "incoming
-// chains". Currently, we model only one chain per participant in the symmetric
-// Session fact. I next document what each argument encodes:
+// Documentation on how session state is modelled.
 /**
     Session(
       // Session ID per participant.
@@ -188,7 +183,6 @@ rule QueryIDS[color=#FDFD96]:
     )
  */
 
-// Model of "iMessage PQ3 Start / Session Start as a Sender"
 rule SessionStartAsASender[color=#B4D9EF]:
   let dst             = <$Me, pk(~idKey), $Them, theirIdPk>
       ecdhSS          = theirEcdhPk^~ecdhSk
@@ -231,7 +225,6 @@ rule SessionStartAsASender[color=#B4D9EF]:
   , !MessageKey(~id, %1, $Me, msgKey)
   , !ECDHKey(~id, $Me, ~ecdhSk) ]
 
-// Model of "iMessage PQ3 Symmetric Ratcheting" (sender view)
 rule SendSymmetricRatchet[color=#FF7F50]:
   let dst = <$Me, pk(~idKey), $Them, theirIdPk>
       msgKey = hkdf(chainKey, 'msg_key')
@@ -255,7 +248,6 @@ rule SendSymmetricRatchet[color=#FF7F50]:
   , !ChainKey(~id, %i %+ %1, $Me, chainKey)
   , !MessageKey(~id, %i %+ %1, $Me, msgKey) ]
 
-// Model of "iMessage PQ3 Start / Session Start as a Receiver"
 rule ReceiverStart[color=#B4D9EF]:
   let dst           = <$Them, theirIdPk, $Me, pk(~idKey)>
       kemSS         = decap(kemEncap, ~kemSk)
@@ -296,7 +288,6 @@ rule ReceiverStart[color=#B4D9EF]:
   , !ChainKey(~id, %1, $Me, chainKey)
   , !MessageKey(~id, %1, $Me, msgKey) ]
 
-// Model of "iMessage PQ3 Symmetric Ratcheting" (receiver view)
 rule ReceiveSymmetricRatchet[color=#FF7F50]:
   let dst = <$Them, theirIdPk, $Me, pk(~idKey)>
       msgKey = hkdf(chainKey, 'msg_key')
