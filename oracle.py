@@ -542,6 +542,10 @@ elif argv[1] == 'InjectiveMessageReceived':
   match = partial(prioritize, [
     r(r'^ECDHKeyGen'),
     r(r'!ECDHPreKey'),
+    when_then(
+      Token(r(r'@ #t(1|2)$')),
+      Token('PublicKeyRatchet'),
+    ),
     r(r'@ #t(1|2)$'),
     r(r'!KU\( ~idKey'),
 
