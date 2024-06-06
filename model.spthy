@@ -514,7 +514,7 @@ lemma ExecutabilityPublicKeyRatchetNoNewKEMSS:
     & (not Ex #x. SomeCompromise() @ #x)"
 
 // Provable (auto)
-lemma SessionStart[reuse,use_induction]:
+lemma Auto_SessionStart[reuse,use_induction]:
   "All id li me them theirIdPk a b c d e f g h i j k #t.
         ( SessionInfo(id, li, me, them) @ #t
         & KeysUsed(theirIdPk, a, b, c, d, e, f, g, h, i, j, k) @ #t)
@@ -522,14 +522,14 @@ lemma SessionStart[reuse,use_induction]:
           & SessionInfo(id, %1, me, them) @ #x)"
 
 // Provable (auto)
-lemma SessionStartUnique[reuse]:
+lemma Auto_SessionStartUnique[reuse]:
   "All id a1 a2 b1 b2 #t1 #t2.
         ( SessionInfo(id, %1, a1, b1) @ #t1
         & SessionInfo(id, %1, a2, b2) @ #t2)
     ==> #t1 = #t2"
 
 // Provable (auto)
-lemma ECDHSkOrigin[reuse,use_induction]:
+lemma Auto_ECDHSkOrigin[reuse,use_induction]:
   "All id li me them myPk a b c d e f g h i j k #t.
         ( SessionInfo(id, li, me, them) @ #t
         & KeysUsed(a, myPk, b, c, d, e, f, g, h, i, j, k) @ #t)
@@ -537,7 +537,7 @@ lemma ECDHSkOrigin[reuse,use_induction]:
         | (Ex #x. ECDHPreKeyGen(me, myPk) @ #x & #x < #t))"
 
 // Provable (auto)
-lemma RootKeyConnectionSend[reuse,use_induction]:
+lemma Auto_RootKeyConnectionSend[reuse,use_induction]:
   "All id i me them m theirIdPk myPk theirPk maybeNewKemPk ecdhSS myKemPk maybeTheirKemPk kemSS encapPk rk ck mk #t.
         ( MessageSent(id, i, me, them, m) @ #t
         & SymmetricRatchet() @ #t
@@ -550,7 +550,7 @@ lemma RootKeyConnectionSend[reuse,use_induction]:
           & i2 << i)"
 
 // Provable (auto)
-lemma RootKeyConnectionReceive[reuse,use_induction]:
+lemma Auto_RootKeyConnectionReceive[reuse,use_induction]:
   "All id i me them m theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
         ( MessageReceived(id, i, them, me, m) @ #t
         & SymmetricRatchet() @ #t
@@ -563,7 +563,7 @@ lemma RootKeyConnectionReceive[reuse,use_induction]:
           & i2 << i)"
 
 // Provable (auto; tens of minutes)
-lemma RootKeyMonotonicity[reuse,use_induction]:
+lemma Auto_RootKeyMonotonicity[reuse,use_induction]:
   "All id li1 li2 me1 me2 them1 them2 a1 a2 b1 b2 c1 c2 d1 d2 e1 e2 f1 f2 g1 g2 h1 h2 i1 i2 rk1 rk2 j1 j2 k1 k2 #t1 #t2.
         ( SessionInfo(id, li1, me1, them1) @ #t1
         & KeysUsed(a1, b1, c1, d1, e1, f1, g1, h1, i1, rk1, j1, k1) @ #t1
@@ -573,16 +573,16 @@ lemma RootKeyMonotonicity[reuse,use_induction]:
     ==> (rk1 << rk2 | rk1 = rk2)"
 
 // Provable (auto)
-lemma ChainKeyMonotonicity[reuse,use_induction,hide_lemma=SessionStart,hide_lemma=SessionStartUnique,
-  hide_lemma=RootKeyConnectionSend,hide_lemma=ECDHSkOrigin,hide_lemma=RootKeyConnectionReceive,
-  hide_lemma=RootKeyMonotonicity]:
+lemma Auto_ChainKeyMonotonicity[reuse,use_induction,hide_lemma=Auto_SessionStart,hide_lemma=Auto_SessionStartUnique,
+  hide_lemma=Auto_RootKeyConnectionSend,hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_RootKeyConnectionReceive,
+  hide_lemma=Auto_RootKeyMonotonicity]:
   "All rkCK ck a b c d e f g h i j #t.
         (KeysUsed(a, b, c, d, e, f, g, h, i, prefix(rkCK), ck, j) @ #t)
     ==> (rkCK << ck)"
 
 // Provable (auto)
-lemma RootKeyConnectionInjectivity[reuse,use_induction,hide_lemma=RootKeyConnectionSend,
-  hide_lemma=RootKeyConnectionReceive,hide_lemma=ChainKeyMonotonicity]:
+lemma Auto_RootKeyConnectionInjectivity[reuse,use_induction,hide_lemma=Auto_RootKeyConnectionSend,
+  hide_lemma=Auto_RootKeyConnectionReceive,hide_lemma=Auto_ChainKeyMonotonicity]:
   "All id i1 i2 me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk maybeNewKemPk kemSS encapPk rk #t1 #t2.
         ( SessionInfo(id, i1, me, them) @ #t1
         & PublicKeyRatchet(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk) @ #t1
@@ -591,21 +591,21 @@ lemma RootKeyConnectionInjectivity[reuse,use_induction,hide_lemma=RootKeyConnect
     ==> (#t1 = #t2)"
 
 // Provable (auto)
-lemma MkCkRelation[reuse,use_induction]:
+lemma Auto_MkCkRelation[reuse,use_induction]:
   "All a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 ck1 ck2 mk #t1 #t2.
         ( KeysUsed(a1, b1, c1, d1, e1, f1, g1, h1, i1, j1, ck1, mk) @ #t1
         & KeysUsed(a2, b2, c2, d2, e2, f2, g2, h2, i2, j2, ck2, mk) @ #t2)
     ==> ck1 = ck2"
 
 // Provable (auto)
-lemma CkRkRelation[reuse,use_induction]:
+lemma Auto_CkRkRelation[reuse,use_induction]:
   "All a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 rk1 rk2 ck #t1 #t2.
         ( KeysUsed(a1, b1, c1, d1, e1, f1, g1, h1, i1, rk1, ck, j1) @ #t1
         & KeysUsed(a2, b2, c2, d2, e2, f2, g2, h2, i2, rk2, ck, j2) @ #t2)
     ==> rk1 = rk2"
 
 // Provable (auto)
-lemma ECDHSSCompromise[reuse]:
+lemma Auto_ECDHSSCompromise[reuse]:
   "All id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
         ( SessionInfo(id, i, me, them) @ #t1
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk) @ #t1
@@ -617,8 +617,8 @@ lemma ECDHSSCompromise[reuse]:
         | (Ex #x. PQAttack() @ #x))"
 
 // Provable (auto)
-lemma MyKemKeyOrigin[reuse,use_induction,hide_lemma=ECDHSSCompromise,
-  hide_lemma=SessionStart,hide_lemma=ECDHSkOrigin]:
+lemma Auto_MyKemKeyOrigin[reuse,use_induction,hide_lemma=Auto_ECDHSSCompromise,
+  hide_lemma=Auto_SessionStart,hide_lemma=Auto_ECDHSkOrigin]:
   "All id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
         ( SessionInfo(id, i, me, them) @ #t
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk) @ #t
@@ -627,8 +627,8 @@ lemma MyKemKeyOrigin[reuse,use_induction,hide_lemma=ECDHSSCompromise,
         | (Ex #x. KemPreKeyGen(me, myKemPk) @ #x & #x < #t))"
 
 // Provable (auto)
-lemma MaybeNewKemKeyOrigin[reuse,use_induction,hide_lemma=ECDHSSCompromise,
-  hide_lemma=SessionStart,hide_lemma=ECDHSkOrigin,hide_lemma=MyKemKeyOrigin]:
+lemma Auto_MaybeNewKemKeyOrigin[reuse,use_induction,hide_lemma=Auto_ECDHSSCompromise,
+  hide_lemma=Auto_SessionStart,hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_MyKemKeyOrigin]:
   "All id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk newKemPk kemSS encapPk rk ck mk #t.
         ( SessionInfo(id, i, me, them) @ #t
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, Just(newKemPk), kemSS, encapPk, rk, ck, mk) @ #t
@@ -636,8 +636,8 @@ lemma MaybeNewKemKeyOrigin[reuse,use_induction,hide_lemma=ECDHSSCompromise,
     ==> (Ex #x. NewKemPublicKey(id, me, them, Just(newKemPk)) @ #x & #x < #t)"
 
 // Provable (auto)
-lemma TheirKemKeyOrigin[reuse,use_induction,hide_lemma=ECDHSSCompromise,
-  hide_lemma=SessionStart,hide_lemma=ECDHSkOrigin,hide_lemma=MyKemKeyOrigin]:
+lemma Auto_TheirKemKeyOrigin[reuse,use_induction,hide_lemma=Auto_ECDHSSCompromise,
+  hide_lemma=Auto_SessionStart,hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_MyKemKeyOrigin]:
   "All id i me them theirIdPk myPk theirPk ecdhSS myKemPk theirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
         ( SessionInfo(id, i, me, them) @ #t
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, Just(theirKemPk), maybeNewKemPk, kemSS, encapPk, rk, ck, mk) @ #t
@@ -645,9 +645,9 @@ lemma TheirKemKeyOrigin[reuse,use_induction,hide_lemma=ECDHSSCompromise,
     ==> (Ex #x. NewKemPublicKey(id, me, them, Just(theirKemPk)) @ #x & #x < #t)"
 
 // Provable (auto)
-lemma KemSSOrigin[reuse,use_induction,hide_lemma=ECDHSSCompromise,
-  hide_lemma=SessionStart,hide_lemma=ECDHSkOrigin,hide_lemma=MyKemKeyOrigin,
-  hide_lemma=MaybeNewKemKeyOrigin,hide_lemma=TheirKemKeyOrigin]:
+lemma Auto_KemSSOrigin[reuse,use_induction,hide_lemma=Auto_ECDHSSCompromise,
+  hide_lemma=Auto_SessionStart,hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_MyKemKeyOrigin,
+  hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin]:
   "All id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
         ( SessionInfo(id, i, me, them) @ #t
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk) @ #t
@@ -657,8 +657,8 @@ lemma KemSSOrigin[reuse,use_induction,hide_lemma=ECDHSSCompromise,
         | (Ex #x. DecapKemSS(id, me, them, kemSS, encapPk) @ #x & #x < #t))"
 
 // Provable (auto)
-lemma KemKeyOriginEncap[reuse,hide_lemma=ECDHSSCompromise,hide_lemma=SessionStart,
-  hide_lemma=ECDHSkOrigin,hide_lemma=KemSSOrigin]:
+lemma Auto_KemKeyOriginEncap[reuse,hide_lemma=Auto_ECDHSSCompromise,hide_lemma=Auto_SessionStart,
+  hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_KemSSOrigin]:
   "All id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
         ( SessionInfo(id, i, me, them) @ #t
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk) @ #t
@@ -667,8 +667,8 @@ lemma KemKeyOriginEncap[reuse,hide_lemma=ECDHSSCompromise,hide_lemma=SessionStar
     ==> (Ex #x. NewKemPublicKey(id, me, them, Just(encapPk)) @ #x & #x < #t)"
 
 // Provable (auto)
-lemma KemKeyOriginDecap[reuse,hide_lemma=ECDHSSCompromise,hide_lemma=SessionStart,
-  hide_lemma=ECDHSkOrigin,hide_lemma=KemSSOrigin]:
+lemma Auto_KemKeyOriginDecap[reuse,hide_lemma=Auto_ECDHSSCompromise,hide_lemma=Auto_SessionStart,
+  hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_KemSSOrigin]:
   "All id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
         ( SessionInfo(id, i, me, them) @ #t
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk) @ #t
@@ -680,8 +680,8 @@ lemma KemKeyOriginDecap[reuse,hide_lemma=ECDHSSCompromise,hide_lemma=SessionStar
 // in branches related to the session start and symmetric ratchet. In these
 // branches, first solve for a public key ratchet and then for the Session fact
 // in the premise of the new public key ratchet step.
-lemma RkFixesKEMSS[reuse,use_induction,hide_lemma=ECDHSSCompromise,
-  hide_lemma=SessionStart,hide_lemma=ECDHSkOrigin]:
+lemma RkFixesKEMSS[reuse,use_induction,hide_lemma=Auto_ECDHSSCompromise,
+  hide_lemma=Auto_SessionStart,hide_lemma=Auto_ECDHSkOrigin]:
   "All rk kemSS1 kemSS2 a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2
     j2 id1 li1 me1 them1 id2 li2 me2 them2 #t1 #t2.
         ( SessionInfo(id1, li1, me1, them1) @ #t1
@@ -691,9 +691,9 @@ lemma RkFixesKEMSS[reuse,use_induction,hide_lemma=ECDHSSCompromise,
     ==> (kemSS1 = kemSS2)"
 
 // Provable (auto)
-lemma RkFixesEcdhSS[reuse,use_induction,hide_lemma=MyKemKeyOrigin,hide_lemma=MaybeNewKemKeyOrigin,
-  hide_lemma=TheirKemKeyOrigin,hide_lemma=KemSSOrigin,hide_lemma=KemKeyOriginEncap,
-  hide_lemma=KemKeyOriginDecap,hide_lemma=RkFixesKEMSS]:
+lemma Auto_RkFixesEcdhSS[reuse,use_induction,hide_lemma=Auto_MyKemKeyOrigin,hide_lemma=Auto_MaybeNewKemKeyOrigin,
+  hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=Auto_KemSSOrigin,hide_lemma=Auto_KemKeyOriginEncap,
+  hide_lemma=Auto_KemKeyOriginDecap,hide_lemma=RkFixesKEMSS]:
   "All rk ecdhSS1 ecdhSS2 a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2
     j2 id1 li1 me1 them1 id2 li2 me2 them2 #t1 #t2.
         ( SessionInfo(id1, li1, me1, them1) @ #t1
@@ -704,11 +704,11 @@ lemma RkFixesEcdhSS[reuse,use_induction,hide_lemma=MyKemKeyOrigin,hide_lemma=May
 
 // Provable (manually). Sometimes, the oracle does not pick out the right
 // signatures to solve for, and we cannot prioritize the application of the
-// lemma KemKeyOriginDecap as this can lead to infinite looping, i.e., must be
+// lemma Auto_KemKeyOriginDecap as this can lead to infinite looping, i.e., must be
 // done manually. This is especially prevalent in branches where one must solve
 // for DecapKemSS.
-lemma KemSSCompromise[reuse,hide_lemma=ECDHSSCompromise,hide_lemma=ECDHSkOrigin,
-  hide_lemma=MyKemKeyOrigin,hide_lemma=MaybeNewKemKeyOrigin,hide_lemma=TheirKemKeyOrigin]:
+lemma KemSSCompromise[reuse,hide_lemma=Auto_ECDHSSCompromise,hide_lemma=Auto_ECDHSkOrigin,
+  hide_lemma=Auto_MyKemKeyOrigin,hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin]:
   "All id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
         ( SessionInfo(id, i, me, them) @ #t1
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk) @ #t1
@@ -720,9 +720,9 @@ lemma KemSSCompromise[reuse,hide_lemma=ECDHSSCompromise,hide_lemma=ECDHSkOrigin,
         | (Ex #x. RevealIdentityKey(them) @ #x & #x < #t1))"
 
 // Provable (manually). Be careful in cases of the symmetric ratchet.
-lemma CkCompromise[reuse,use_induction,hide_lemma=ECDHSkOrigin,hide_lemma=MyKemKeyOrigin,
-  hide_lemma=MaybeNewKemKeyOrigin,hide_lemma=TheirKemKeyOrigin,hide_lemma=KemKeyOrigin,
-  hide_lemma=KemSSOrigin]:
+lemma CkCompromise[reuse,use_induction,hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_MyKemKeyOrigin,
+  hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=KemKeyOrigin,
+  hide_lemma=Auto_KemSSOrigin]:
   "All id li me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
         ( SessionInfo(id, li, me, them) @ #t1
         & KeysUsed(theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk) @ #t1
@@ -734,16 +734,16 @@ lemma CkCompromise[reuse,use_induction,hide_lemma=ECDHSkOrigin,hide_lemma=MyKemK
         | (Ex rkCK #x. rk = prefix(rkCK) & !KU(rkCK) @ #x))"
 
 // Provable (auto)
-lemma RkFormat[reuse,use_induction]:
+lemma Auto_RkFormat[reuse,use_induction]:
   "All rk a b c d e f g h i k l #t.
         KeysUsed(a, b, c, d, e, f, g, h, i, rk, k, l) @ #t
     ==> Ex t. rk = prefix(t)"
 
 // Provable (auto)
-lemma RkSecretCompromiseECDH[reuse,hide_lemma=CkCompromise,hide_lemma=SessionStart,
-  hide_lemma=ECDHSkOrigin,hide_lemma=MyKemKeyOrigin,hide_lemma=MaybeNewKemKeyOrigin,
-  hide_lemma=TheirKemKeyOrigin,hide_lemma=KemSSOrigin,hide_lemma=KemKeyOriginEncap,
-  hide_lemma=KemKeyOriginDecap,hide_lemma=KemSSCompromise]:
+lemma Auto_RkSecretCompromiseECDH[reuse,hide_lemma=CkCompromise,hide_lemma=Auto_SessionStart,
+  hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_MyKemKeyOrigin,hide_lemma=Auto_MaybeNewKemKeyOrigin,
+  hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=Auto_KemSSOrigin,hide_lemma=Auto_KemKeyOriginEncap,
+  hide_lemma=Auto_KemKeyOriginDecap,hide_lemma=KemSSCompromise]:
   "All id li me them theirIdPk myEcdhPk theirEcdhPk ecdhSS myKemPk maybeTheirKemPk maybeNewKemPk kemSS encapPk rkCK ck mk #t1 #t2.
         ( SessionInfo(id, li, me, them) @ #t1
         & KeysUsed(theirIdPk, myEcdhPk, theirEcdhPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck, mk) @ #t1
@@ -753,11 +753,11 @@ lemma RkSecretCompromiseECDH[reuse,hide_lemma=CkCompromise,hide_lemma=SessionSta
         | (Ex #x. !KU(ecdhSS) @ #x))"
 
 // Provable (auto)
-lemma RkSecretCompromiseKemSS[reuse,use_induction,hide_lemma=SessionStart,hide_lemma=SessionStartUnique,
-  hide_lemma=ECDHSkOrigin,hide_lemma=ECDHSSCompromise,hide_lemma=MyKemKeyOrigin,
-  hide_lemma=MaybeNewKemKeyOrigin,hide_lemma=TheirKemKeyOrigin,hide_lemma=KemSSOrigin,
-  hide_lemma=KemKeyOriginEncap,hide_lemma=KemKeyOriginDecap,hide_lemma=RkFixesEcdhSS,
-  hide_lemma=CkCompromise,hide_lemma=RkSecretCompromiseECDH]:
+lemma Auto_RkSecretCompromiseKemSS[reuse,use_induction,hide_lemma=Auto_SessionStart,hide_lemma=Auto_SessionStartUnique,
+  hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_ECDHSSCompromise,hide_lemma=Auto_MyKemKeyOrigin,
+  hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=Auto_KemSSOrigin,
+  hide_lemma=Auto_KemKeyOriginEncap,hide_lemma=Auto_KemKeyOriginDecap,hide_lemma=Auto_RkFixesEcdhSS,
+  hide_lemma=CkCompromise,hide_lemma=Auto_RkSecretCompromiseECDH]:
   "All id li me them theirIdPk myEcdhPk theirEcdhPk ecdhSS myKemPk maybeTheirKemPk maybeNewKemPk kemSS encapPk rkCK ck mk #t1 #t2.
         ( SessionInfo(id, li, me, them) @ #t1
         & KeysUsed(theirIdPk, myEcdhPk, theirEcdhPk, ecdhSS, myKemPk, maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck, mk) @ #t1
@@ -767,23 +767,23 @@ lemma RkSecretCompromiseKemSS[reuse,use_induction,hide_lemma=SessionStart,hide_l
         | (Ex rk #x. RevealRootKey(them, kemSS, rk) @ #x))"
 
 // Provable (auto)
-// NOTE: This lemma is very close the ChainKeyMonotonicity, but I need this form
-// for CkCompromiseFull. I decided to add it here instead of changing the
+// NOTE: This lemma is very close the Auto_ChainKeyMonotonicity, but I need this form
+// for Auto_MkCompromise. I decided to add it here instead of changing the
 // original one so that I don't need to reprove everything above.
-lemma ChainKeyMonotonicity2[reuse,use_induction,hide_lemma=SessionStart,hide_lemma=SessionStartUnique,
-  hide_lemma=RootKeyConnectionSend,hide_lemma=ECDHSkOrigin,hide_lemma=RootKeyConnectionReceive,
-  hide_lemma=RootKeyMonotonicity]:
+lemma Auto_ChainKeyMonotonicity2[reuse,use_induction,hide_lemma=Auto_SessionStart,hide_lemma=Auto_SessionStartUnique,
+  hide_lemma=Auto_RootKeyConnectionSend,hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_RootKeyConnectionReceive,
+  hide_lemma=Auto_RootKeyMonotonicity]:
   "All rkCK ck a b c d e f g h i j #t.
         (KeysUsed(a, b, c, d, e, f, g, h, i, prefix(rkCK), ck, j) @ #t)
     ==> (suffix(rkCK) << ck | suffix(rkCK) = ck)"
 
 // Provable (auto)
-lemma MkCompromise[reuse,use_induction,hide_lemma=SessionStart,hide_lemma=SessionStartUnique,
-  hide_lemma=ECDHSkOrigin,hide_lemma=RootKeyConnectionSend,hide_lemma=RootKeyConnectionReceive,
-  hide_lemma=ECDHSSCompromise,hide_lemma=MyKemKeyOrigin,hide_lemma=MaybeNewKemKeyOrigin,
-  hide_lemma=TheirKemKeyOrigin,hide_lemma=KemSSOrigin,hide_lemma=KemKeyOriginEncap,
-  hide_lemma=KemKeyOriginDecap,hide_lemma=KemSSCompromise,hide_lemma=CkCompromise,
-  hide_lemma=RkSecretCompromiseECDH,hide_lemma=RkSecretCompromiseKemSS]:
+lemma Auto_MkCompromise[reuse,use_induction,hide_lemma=Auto_SessionStart,hide_lemma=Auto_SessionStartUnique,
+  hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_RootKeyConnectionSend,hide_lemma=Auto_RootKeyConnectionReceive,
+  hide_lemma=Auto_ECDHSSCompromise,hide_lemma=Auto_MyKemKeyOrigin,hide_lemma=Auto_MaybeNewKemKeyOrigin,
+  hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=Auto_KemSSOrigin,hide_lemma=Auto_KemKeyOriginEncap,
+  hide_lemma=Auto_KemKeyOriginDecap,hide_lemma=KemSSCompromise,hide_lemma=CkCompromise,
+  hide_lemma=Auto_RkSecretCompromiseECDH,hide_lemma=Auto_RkSecretCompromiseKemSS]:
   "All id sentI me them myEcdhPk theirEcdhPk kemSS encapPk chainKey msgKey #t1 #t2.
         ( SessionInfo(id, sentI, me, them) @ #t1
         & SessionSecrets(myEcdhPk, theirEcdhPk, kemSS, encapPk, chainKey, msgKey) @ #t1
@@ -793,10 +793,10 @@ lemma MkCompromise[reuse,use_induction,hide_lemma=SessionStart,hide_lemma=Sessio
         | (Ex #x. RevealMessageKey(them, msgKey) @ #x))"
 
 // Provable (auto)
-lemma Secrecy[hide_lemma=SessionStart,hide_lemma=SessionStartUnique,hide_lemma=ECDHSkOrigin,
-  hide_lemma=RootKeyConnectionSend,hide_lemma=RootKeyConnectionReceive,hide_lemma=MyKemKeyOrigin,
-  hide_lemma=MaybeNewKemKeyOrigin,hide_lemma=TheirKemKeyOrigin,hide_lemma=KemSSOrigin,
-  hide_lemma=KemKeyOriginEncap,hide_lemma=KemKeyOriginDecap]:
+lemma Auto_Secrecy[hide_lemma=Auto_SessionStart,hide_lemma=Auto_SessionStartUnique,hide_lemma=Auto_ECDHSkOrigin,
+  hide_lemma=Auto_RootKeyConnectionSend,hide_lemma=Auto_RootKeyConnectionReceive,hide_lemma=Auto_MyKemKeyOrigin,
+  hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=Auto_KemSSOrigin,
+  hide_lemma=Auto_KemKeyOriginEncap,hide_lemma=Auto_KemKeyOriginDecap]:
   "All id sentI me them msg myEcdhPk theirEcdhPk kemSS encapPk chainKey msgKey #t.
           // Whenever a message is sent...
         ( MessageSent(id, sentI, me, them, msg) @ #t
@@ -833,27 +833,27 @@ lemma Secrecy[hide_lemma=SessionStart,hide_lemma=SessionStartUnique,hide_lemma=E
 /* AUTHENTICATION BELOW */
 
 // Provable (auto)
-lemma NoninjectiveAuthentication [hide_lemma=SessionStartUnique,hide_lemma=ECDHSkOrigin,
-  hide_lemma=RootKeyConnectionSend,hide_lemma=RootKeyConnectionReceive,hide_lemma=RootKeyMonotonicity,
-  hide_lemma=ChainKeyMonotonicity,hide_lemma=RootKeyConnectionInjectivity,hide_lemma=MkCkRelation,
-  hide_lemma=CkRkRelation,hide_lemma=ECDHSSCompromise,hide_lemma=MyKemKeyOrigin,
-  hide_lemma=MaybeNewKemKeyOrigin,hide_lemma=TheirKemKeyOrigin,hide_lemma=KemSSOrigin,
-  hide_lemma=KemKeyOriginEncap,hide_lemma=KemKeyOriginDecap,hide_lemma=KemSSCompromise,
-  hide_lemma=CkCompromise,hide_lemma=Secrecy,hide_lemma=RkFixesKEMSS,hide_lemma=RkFixesEcdhSS,
-  hide_lemma=RkFormat,hide_lemma=RkSecretCompromiseECDH,hide_lemma=RkSecretCompromiseKemSS,
-  hide_lemma=ChainKeyMonotonicity2,hide_lemma=MkCompromise]:
+lemma Auto_NoninjectiveAgreement[hide_lemma=Auto_SessionStartUnique,hide_lemma=Auto_ECDHSkOrigin,
+  hide_lemma=Auto_RootKeyConnectionSend,hide_lemma=Auto_RootKeyConnectionReceive,hide_lemma=Auto_RootKeyMonotonicity,
+  hide_lemma=Auto_ChainKeyMonotonicity,hide_lemma=Auto_RootKeyConnectionInjectivity,hide_lemma=Auto_MkCkRelation,
+  hide_lemma=Auto_CkRkRelation,hide_lemma=Auto_ECDHSSCompromise,hide_lemma=Auto_MyKemKeyOrigin,
+  hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=Auto_KemSSOrigin,
+  hide_lemma=Auto_KemKeyOriginEncap,hide_lemma=Auto_KemKeyOriginDecap,hide_lemma=KemSSCompromise,
+  hide_lemma=CkCompromise,hide_lemma=Auto_Secrecy,hide_lemma=RkFixesKEMSS,hide_lemma=Auto_RkFixesEcdhSS,
+  hide_lemma=Auto_RkFormat,hide_lemma=Auto_RkSecretCompromiseECDH,hide_lemma=Auto_RkSecretCompromiseKemSS,
+  hide_lemma=Auto_ChainKeyMonotonicity2,hide_lemma=Auto_MkCompromise]:
   "All id i s r m #t.
         MessageReceived(id, i, s, r, m) @ #t
     ==>   (Ex id_ #x. MessageSent(id_, i, s, r, m) @ #x & #x < #t)
         | (Ex #x. RevealIdentityKey(s) @ #x & #x < #t)"
 
 // Provable (auto)
-lemma InjectiveMessageReceived[hide_lemma=ECDHSSCompromise,
-  hide_lemma=MyKemKeyOrigin,hide_lemma=MaybeNewKemKeyOrigin,hide_lemma=TheirKemKeyOrigin,
-  hide_lemma=KemSSOrigin,hide_lemma=KemKeyOriginEncap,hide_lemma=KemKeyOriginDecap,
-  hide_lemma=KemSSCompromise,hide_lemma=CkCompromise,hide_lemma=Secrecy,hide_lemma=RkFixesKEMSS,hide_lemma=RkFixesEcdhSS,
-  hide_lemma=RkFormat,hide_lemma=RkSecretCompromiseECDH,hide_lemma=RkSecretCompromiseKemSS,
-  hide_lemma=ChainKeyMonotonicity2,hide_lemma=MkCompromise]:
+lemma InjectiveMessageReceived[hide_lemma=Auto_ECDHSSCompromise,
+  hide_lemma=Auto_MyKemKeyOrigin,hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin,
+  hide_lemma=Auto_KemSSOrigin,hide_lemma=Auto_KemKeyOriginEncap,hide_lemma=Auto_KemKeyOriginDecap,
+  hide_lemma=KemSSCompromise,hide_lemma=CkCompromise,hide_lemma=Auto_Secrecy,hide_lemma=RkFixesKEMSS,hide_lemma=Auto_RkFixesEcdhSS,
+  hide_lemma=Auto_RkFormat,hide_lemma=Auto_RkSecretCompromiseECDH,hide_lemma=Auto_RkSecretCompromiseKemSS,
+  hide_lemma=Auto_ChainKeyMonotonicity2,hide_lemma=Auto_MkCompromise]:
   "All id1 id2 i1 i2 s1 s2 r1 r2 m rEcdhPk1 sEcdhPk1 kemSS1 encapPk1 chainKey1
       msgKey1 rEcdhPk2 sEcdhPk2 kemSS2 encapPk2 chainKey2 msgKey2 #t1 #t2.
         ( MessageReceived(id1, i1, s1, r1, m) @ #t1

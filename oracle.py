@@ -121,7 +121,7 @@ def compose(*filters, goals=GOALS):
   return gs
 
 match = lambda goals=None: []
-if argv[1] == 'ECDHSkOrigin':
+if argv[1] == 'Auto_ECDHSkOrigin':
   match = partial(prioritize, [
     'ECDHKeyGen( id, me, them, myPk ) @ #x',
     '@ #t',
@@ -173,7 +173,7 @@ elif argv[1] == 'CkCompromise':
       'SessionInfo',
     ]),
   )
-elif argv[1] == 'RkSecretCompromiseECDH':
+elif argv[1] == 'Auto_RkSecretCompromiseECDH':
   match = partial(compose,
     # Filter out where the adversary knows the message key indicator from; this
     # is public and does nothing.
@@ -217,7 +217,7 @@ elif argv[1] == 'RkSecretCompromiseECDH':
       Token('SessionInfo', max=-1),
     ]),
   )
-elif argv[1] == 'RkSecretCompromiseKemSS':
+elif argv[1] == 'Auto_RkSecretCompromiseKemSS':
   match = partial(compose,
     # Filter out where the adversary knows the message key indicator from; this
     # is public and does nothing.
@@ -280,7 +280,7 @@ elif argv[1] == 'CkCompromiseFull':
       r(r'SessionSecrets\(.+@ #t\d$'),
     ]),
   )
-elif argv[1] == 'MkCompromise':
+elif argv[1] == 'Auto_MkCompromise':
   match = partial(compose,
     # Filter out where the adversary knows the message key indicator from; this
     # is public and does nothing.
@@ -312,7 +312,7 @@ elif argv[1] == 'MkCompromise':
       'SessionInfo',
     ]),
   )
-elif argv[1] == 'Secrecy':
+elif argv[1] == 'Auto_Secrecy':
   match = partial(compose,
     # Filter out where the adversary knows the message key indicator from; this
     # is public and does nothing.
@@ -328,7 +328,7 @@ elif argv[1] == 'Secrecy':
       r(r'Reveal(Chain|Message)Key\('),
     ]),
   )
-elif argv[1] in ['RootKeyConnectionSend', 'RootKeyConnectionReceive']:
+elif argv[1] in ['Auto_RootKeyConnectionSend', 'Auto_RootKeyConnectionReceive']:
   match = partial(prioritize, [
     r(r'^\(?last'),
     'MessageSent',
@@ -338,7 +338,7 @@ elif argv[1] in ['RootKeyConnectionSend', 'RootKeyConnectionReceive']:
     'splitEqs',
     'Session(',
   ])
-elif argv[1] in ['RootKeyMonotonicity', 'RootKeyConnectionInjectivity']:
+elif argv[1] in ['Auto_RootKeyMonotonicity', 'Auto_RootKeyConnectionInjectivity']:
   match = partial(prioritize, [
     r(r'^\(?last'),
     'last',
@@ -386,7 +386,7 @@ elif argv[1] == 'RkFixesKEMSS':
     r(r'^(Decap|New)KemSS'),
     r(r'(Decap|New)KemSS'),
   ])
-elif argv[1] == 'RkFixesEcdhSS':
+elif argv[1] == 'Auto_RkFixesEcdhSS':
   match = partial(prioritize, [
     r(r'^\(?last'),
     'last',
@@ -397,12 +397,12 @@ elif argv[1] == 'RkFixesEcdhSS':
     r(r'Session\(.+▶. #t\d$'),
     r(r'PublicKeyRatchet.+@ #x\.(1|2)$'),
   ])
-elif argv[1].startswith('ChainKeyMonotonicity'):
+elif argv[1].startswith('Auto_ChainKeyMonotonicity'):
   match = partial(prioritize, [
     'KeysUsed',
     'Session(',
   ])
-elif argv[1] == 'ECDHSSCompromise':
+elif argv[1] == 'Auto_ECDHSSCompromise':
   match = partial(compose,
     Token(r(r'!KU\( hkdf.+\'msg_key_ind\''), complement=True, max=-1).match_all,
     partial(prioritize, [
@@ -461,7 +461,7 @@ elif argv[1] == 'ECDHSSCompromise':
       'PublicKeyRatchet( ~id, $Them, $Me',
     ])
   )
-elif argv[1] == 'MyKemKeyOrigin':
+elif argv[1] == 'Auto_MyKemKeyOrigin':
   match = partial(prioritize, [
     r(r'^\(last'),
     r(r'KeysUsed\(.+\) @ #t$'),
@@ -472,7 +472,7 @@ elif argv[1] == 'MyKemKeyOrigin':
     '!KemPreKey',
     'Session(',
   ])
-elif argv[1] == 'MaybeNewKemKeyOrigin':
+elif argv[1] == 'Auto_MaybeNewKemKeyOrigin':
   match = partial(prioritize, [
     'last',
     r(r'KeysUsed\(.+\) @ #t\b'),
@@ -481,7 +481,7 @@ elif argv[1] == 'MaybeNewKemKeyOrigin':
     'NewKemPublicKey',
     'Session(',
   ])
-elif argv[1] == 'TheirKemKeyOrigin':
+elif argv[1] == 'Auto_TheirKemKeyOrigin':
   match = partial(prioritize, [
     'last',
     r(r'KeysUsed\(.+\) @ #t\b'),
@@ -490,12 +490,12 @@ elif argv[1] == 'TheirKemKeyOrigin':
     'NewKemPublicKey',
     'Session(',
   ])
-elif argv[1] in ['KemKeyOriginEncap', 'KemKeyOriginDecap']:
+elif argv[1] in ['Auto_KemKeyOriginEncap', 'Auto_KemKeyOriginDecap']:
   match = partial(prioritize, [
     r(r'@ #t$'),
     r(r'∃.+KemKeyGen'),
   ])
-elif argv[1] == 'KemSSOrigin':
+elif argv[1] == 'Auto_KemSSOrigin':
   match = partial(prioritize, [
     when_then(
       Token(r(r'SessionInfo\(.+\) @ #t$')),
@@ -544,7 +544,7 @@ elif argv[1] == 'KemSSCompromise':
 
     '!KU( ~kemSS',
   ])
-elif argv[1] == 'NoninjectiveAuthentication':
+elif argv[1] == 'Auto_NoninjectiveAgreement':
   match = partial(prioritize, [
     r(r'!KU\( ~idKey'),
     'IDSQuery',
@@ -595,7 +595,7 @@ elif argv[1] == 'InjectiveMessageReceived':
     r(r'Session\(.+\) ▶. #t1$'),
     r(r'^!KU\( sign\(.*ciphertext,.*<\$Them(\.\d)?, [\w\d\.\(\)~]+, \$Me(\.\d+)?, [\w\d\.\(\)~]+>'),
   ])
-elif argv[1] in ['MkCkRelation', 'CkRkRelation']:
+elif argv[1] in ['Auto_MkCkRelation', 'Auto_CkRkRelation']:
   match = partial(prioritize, [
     'last',
     r(r'KeysUsed\(.+(@|▶.) #t\d'),
@@ -611,7 +611,7 @@ elif argv[1] in ['MkCkRelation', 'CkRkRelation']:
     'splitEqs(0)',
     'splitEqs',
   ])
-elif argv[1] == 'ChainKeySources':
+elif argv[1] == 'Auto_ChainKeySources':
   match = partial(prioritize, [
     r(r'Session\(.+(@|▶.) #vr'),
   ])
@@ -619,13 +619,13 @@ elif argv[1].startswith('ChainKeyFormat'):
   match = partial(prioritize, [
     'Session',
   ])
-elif argv[1] == 'SessionStart':
+elif argv[1] == 'Auto_SessionStart':
   match = partial(prioritize, [
     'last',
     r(r'@ #t$'),
     r(r'Session\(.+ ▶. #t$'),
   ])
-elif argv[1] == 'SessionStartUnique':
+elif argv[1] == 'Auto_SessionStartUnique':
   match = partial(prioritize, [
     'SessionInfo',
   ])
@@ -650,7 +650,7 @@ elif argv[1] in ['ExecutabilityPublicKeyRatchetSomeNewKEMSS', 'ExecutabilityPubl
       ])
     ),
   )
-elif argv[1] == 'RkFormat':
+elif argv[1] == 'Auto_RkFormat':
   match = partial(prioritize, [
     'last',
     'KeysUsed',
