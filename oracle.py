@@ -29,14 +29,13 @@ if not GOALS:
   exit(0)
 
 class Token:
-  def __init__(self, raw_token, post_process=None, complement=False, max=3):
+  def __init__(self, raw_token, complement=False, max=3):
     if isinstance(raw_token, re.Pattern):
       self.compiled = raw_token
       self.raw = raw_token.pattern
     else:
       self.compiled = None
       self.raw = raw_token
-    self.post_process = None
     self.max = max
     self.complement = complement
 
@@ -51,9 +50,6 @@ class Token:
     m = (self.raw in repr(goal)) \
         if self.compiled is None \
         else self.compiled.search(repr(goal))
-
-    if callable(self.post_process):
-      m = self.post_process(repr(goal), m)
 
     if bool(m) == self.complement:
       return None
@@ -262,22 +258,6 @@ elif argv[1] == 'Auto_RkSecretCompromiseKemSS':
       r(r'Session.+▶. #vr'),
 
       'SessionInfo',
-    ]),
-  )
-elif argv[1] == 'CkCompromiseFull':
-  match = partial(compose,
-    # Filter out where the adversary knows the message key indicator from; this
-    # is public and does nothing.
-    Token(r(r'!KU\( hkdf.+\'msg_key_ind\''), max=-1, complement=True).match_all,
-    partial(prioritize, [
-      '∀',
-      r(r'^\(∃ #\w+(\.\d+)?\.\s*\(PQAttack'),
-      Token(r(r'\(∃ #\w(\.\d+)?\.\s*\(CompromisedECDH\w+\(')),
-      Token(r(r'\(∃ #\w(\.\d+)?\.\s*\(CompromisedKemKey\(')),
-      Token(r(r'\(∃ \w+ #\w(\.\d+)?\.\s*\(CompromisedChainKey\(')),
-
-      r(r'SessionInfo\(.+@ #t\d$'),
-      r(r'SessionSecrets\(.+@ #t\d$'),
     ]),
   )
 elif argv[1] == 'Auto_MkCompromise':
@@ -564,10 +544,6 @@ elif argv[1] == 'InjectiveMessageReceived':
     r(r'!ECDHPreKey'),
     r(r'@ #t(1|2)$'),
     r(r'!KU\( ~idKey'),
-    # Token(
-    #   r(r'PublicKeyRatchet\(.*\'g\'\^\((?P<kprod1>~ecdhSk(\.\d)?\*~ecdhSk(\.\d)?)\),.*hkdf\(\'g\'\^\((?P<kprod2>~ecdhSk(\.\d)?\*~ecdhSk(\.\d)?)\)'),
-    #   post_process=lambda _, m: None if m is None or m['kprod1'] == m['kprod2'] else m,
-    # ),
 
     when_then(
       Token(r(r'SessionStart\( pk\(\w+\) \) @ (?P<tvar>#[\w\d\.]+)')),
@@ -614,10 +590,6 @@ elif argv[1] in ['Auto_MkCkRelation', 'Auto_CkRkRelation']:
 elif argv[1] == 'Auto_ChainKeySources':
   match = partial(prioritize, [
     r(r'Session\(.+(@|▶.) #vr'),
-  ])
-elif argv[1].startswith('ChainKeyFormat'):
-  match = partial(prioritize, [
-    'Session',
   ])
 elif argv[1] == 'Auto_SessionStart':
   match = partial(prioritize, [
