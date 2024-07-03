@@ -770,11 +770,10 @@ lemma Auto_ChainKeyMonotonicity2[reuse,use_induction,hide_lemma=Auto_SessionStar
 
 // Provable (auto)
 lemma Auto_MkCompromise[reuse,use_induction,hide_lemma=Auto_SessionStart,hide_lemma=Auto_SessionStartUnique,
-  hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_RootKeyConnectionSend,hide_lemma=Auto_RootKeyConnectionReceive,
-  hide_lemma=Auto_ECDHSSCompromise,hide_lemma=Auto_MyKemKeyOrigin,hide_lemma=Auto_MaybeNewKemKeyOrigin,
-  hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=Auto_KemSSOrigin,hide_lemma=Auto_KemKeyOriginEncap,
-  hide_lemma=Auto_KemKeyOriginDecap,hide_lemma=KemSSCompromise,hide_lemma=CkCompromise,
-  hide_lemma=Auto_RkSecretCompromiseECDH,hide_lemma=Auto_RkSecretCompromiseKemSS]:
+  hide_lemma=Auto_ECDHSkOrigin,hide_lemma=Auto_ECDHSSCompromise,hide_lemma=Auto_MyKemKeyOrigin,
+  hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=Auto_KemSSOrigin,
+  hide_lemma=Auto_KemKeyOriginEncap,hide_lemma=Auto_KemKeyOriginDecap,hide_lemma=KemSSCompromise,
+  hide_lemma=CkCompromise,hide_lemma=Auto_RkSecretCompromiseECDH,hide_lemma=Auto_RkSecretCompromiseKemSS]:
   "All id sentI me them myEcdhPk theirEcdhPk kemSS encapPk chainKey msgKey #t1 #t2.
         ( SessionInfo(id, sentI, me, them) @ #t1
         & SessionSecrets(myEcdhPk, theirEcdhPk, kemSS, encapPk, chainKey, msgKey) @ #t1
