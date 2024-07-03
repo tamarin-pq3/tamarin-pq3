@@ -382,7 +382,7 @@ elif argv[1].startswith('Auto_ChainKeyMonotonicity'):
     'KeysUsed',
     'Session(',
   ])
-elif argv[1] == 'Auto_ECDHSSCompromise':
+elif argv[1] == 'ECDHSSCompromise':
   match = partial(compose,
     Token(r(r'!KU\( hkdf.+\'msg_key_ind\''), complement=True, max=-1).match_all,
     partial(prioritize, [
@@ -439,6 +439,8 @@ elif argv[1] == 'Auto_ECDHSSCompromise':
       ),
       r(r'NewECDHSS.+@ #x$'),
       'PublicKeyRatchet( ~id, $Them, $Me',
+      r(r'Session\(.+\) ▶. #t1$'),
+      r(r'Session\(.+\) ▶. #x(\.\d+)?$'),
     ])
   )
 elif argv[1] == 'Auto_MyKemKeyOrigin':
