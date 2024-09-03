@@ -12,6 +12,7 @@ We used Tamarin version 1.8.0 and Maude versions 3.1 and 3.2.1.
 
 | Path | Description |
 |---|---|
+| `/case-study`| Contains the example theories used to illustrate our proof methodology. |
 | `/dev` | Contains scripts used by the modelers to construct proofs. Please ignore. |
 | `/proofs` | Contains proofs for lemmas that cannot be proven automatically. The folder contains more documentation. |
 | `/model.spthy` | Our formal model of iMessage PQ3. |

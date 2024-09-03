@@ -1,0 +1,37 @@
+theory Revealing
+begin
+
+builtins: diffie-hellman
+
+functions: h/1
+
+rule Start:
+  [ Fr(~id), Fr(~x) ]
+  --[ Start(~id, ~x) ]->
+  [ Loop(~id, ~x, ~x), !Element(~id, ~x) ]
+
+rule Loop:
+  [ Loop(~id, seed, x) ]
+  --[ Compute(~id, seed, h(x)) ]->
+  [ Loop(~id, seed, h(x)), !Element(~id, h(x)) ]
+
+rule Reveal:
+  [ !Element(~id, x) ]
+  --[ RevealElement(~id, x) ]->
+  [ Out(x) ]
+
+lemma LoopStart[reuse,use_induction]:
+  "All id seed x #t. Compute(id, seed, x) @ #t
+    ==> (Ex #x. Start(id, seed) @ #x)"
+
+lemma SeedsMatch[reuse,use_induction,hide_lemma=LoopStart]:
+  "All id1 id2 seed1 seed2 x #t1 #t2. Compute(id1, seed1, x) @ #t1
+        & Compute(id2, seed2, x) @ #t2
+    ==> (seed1 = seed2)"
+
+lemma Secrecy[use_induction]:
+  "All id seed x #t. Compute(id, seed, x) @ #t
+    ==>   (not Ex #x. KU(x) @ #x)
+        | (Ex y #x. RevealElement(id, y) @ #x & (y << x | y = x))"
+
+end

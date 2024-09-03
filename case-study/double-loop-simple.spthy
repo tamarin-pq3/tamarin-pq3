@@ -1,0 +1,48 @@
+theory DoubleLoopUnrolling
+begin
+
+functions: kdf/2, h/1
+
+rule Start:
+  let seed = kdf('0', ~x) in
+  [ Fr(~id), Fr(~x) ]
+  --[ FreshSeed(~id, seed, ~x)
+    , Outer(~id, seed) ]->
+  [ Construct(~id, seed, seed)
+  , !Seed(~id, ~x) ]
+
+rule Outer:
+  let newSeed = kdf(seed, ~x) in
+  [ Construct(~id, k, seed), Fr(~x) ]
+  --[ FreshSeed(~id, newSeed, ~x)
+    , Outer(~id, newSeed) ]->
+  [ Construct(~id, newSeed, newSeed)
+  , !Seed(~id, ~x) ]
+
+rule Inner:
+  let k = h(k_old) in
+  [ Construct(~id, k_old, seed) ]
+  --[ Key(~id, k, seed) ]->
+  [ Construct(~id, k, seed) ]
+
+rule RevealSeed:
+  [ !Seed(~id, x) ]
+  --[ RevealSeed(~id, x) ]->
+  [ Out(x) ]
+
+lemma OuterLoopStep[reuse,use_induction]:
+  "All id k seed #t. Key(id, k, seed) @ #t
+    ==> Ex #x. Outer(id, seed) @ #x & #x < #t"
+
+lemma SeedSecrecy[reuse,use_induction,hide_lemma=OuterLoopStep]:
+  "All id k seed #t1 #t2. Key(id, k, seed) @ #t1 & KU(k) @ #t2
+    ==> (Ex #x. KU(seed) @ #x)"
+
+lemma KeySecrecy[reuse]:
+  "All id k seed #t. Key(id, k, seed) @ #t
+    ==>   (not Ex #x. K(k) @ #x)
+        | (Ex x #x1 #x2. FreshSeed(id, seed, x) @ #x1
+            & RevealSeed(id, x) @ #x2
+            & #x1 < #x2)"
+
+end
