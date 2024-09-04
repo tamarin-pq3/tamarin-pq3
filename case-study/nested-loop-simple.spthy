@@ -1,4 +1,4 @@
-theory DoubleLoop
+theory NestedLoopSimple
 begin
 
 functions: kdf/2, h/1
@@ -11,19 +11,13 @@ rule Start:
   [ Construct(~id, seed, seed)
   , !Seed(~id, ~x) ]
 
-rule OuterNewSecret:
+rule Outer:
   let newSeed = kdf(seed, ~x) in
   [ Construct(~id, k, seed), Fr(~x) ]
   --[ FreshSeed(~id, newSeed, ~x)
     , Outer(~id, newSeed) ]->
   [ Construct(~id, newSeed, newSeed)
   , !Seed(~id, ~x) ]
-
-rule OuterOldSecret:
-  let newSeed = kdf(seed, '0') in
-  [ Construct(~id, k, seed) ]
-  --[ Outer(~id, seed) ]->
-  [ Construct(~id, newSeed, seed)]
 
 rule Inner:
   let k = h(k_old) in
@@ -40,11 +34,7 @@ lemma OuterLoopStep[reuse,use_induction]:
   "All id k seed #t. Key(id, k, seed) @ #t
     ==> Ex #x. Outer(id, seed) @ #x & #x < #t"
 
-lemma FreshSeedInstantiate[reuse,use_induction]:
-  "All id seed #t. Outer(id, seed) @ #t
-    ==> Ex s #x. FreshSeed(id, seed, s) @ #x"
-
-lemma SeedSecrecy[reuse,use_induction,hide_lemma=OuterLoopStep,hide_lemma=FreshSeedInstantiate]:
+lemma SeedSecrecy[reuse,use_induction,hide_lemma=OuterLoopStep]:
   "All id k seed #t1 #t2. Key(id, k, seed) @ #t1 & KU(k) @ #t2
     ==> (Ex #x. KU(seed) @ #x)"
 
