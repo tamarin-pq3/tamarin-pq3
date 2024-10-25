@@ -7,29 +7,33 @@ rule Start:
   let seed = kdf('0', ~x) in
   [ Fr(~id), Fr(~x) ]
   --[ FreshSeed(~id, seed, ~x)
-    , Outer(~id, seed) ]->
-  [ Construct(~id, seed, seed)
+    , Outer(~id, seed, seed)
+    , UseSeed(~id, seed, seed) ]->
+  [ Construct(~id, seed, seed, seed)
   , !Seed(~id, ~x) ]
 
 rule OuterNewSecret:
   let newSeed = kdf(seed, ~x) in
-  [ Construct(~id, k, seed), Fr(~x) ]
+  [ Construct(~id, k, seed, lastFreshSeed), Fr(~x) ]
   --[ FreshSeed(~id, newSeed, ~x)
-    , Outer(~id, newSeed) ]->
-  [ Construct(~id, newSeed, newSeed)
+    , Outer(~id, newSeed, newSeed)
+    , UseSeed(~id, newSeed, newSeed) ]->
+  [ Construct(~id, newSeed, newSeed, newSeed)
   , !Seed(~id, ~x) ]
 
 rule OuterOldSecret:
   let newSeed = kdf(seed, '0') in
-  [ Construct(~id, k, seed) ]
-  --[ Outer(~id, seed) ]->
-  [ Construct(~id, newSeed, seed)]
+  [ Construct(~id, k, seed, lastFreshSeed) ]
+  --[ Outer(~id, newSeed, lastFreshSeed)
+    , UseSeed(~id, newSeed, lastFreshSeed) ]->
+  [ Construct(~id, newSeed, newSeed, lastFreshSeed)]
 
 rule Inner:
   let k = h(k_old) in
-  [ Construct(~id, k_old, seed) ]
-  --[ Key(~id, k, seed) ]->
-  [ Construct(~id, k, seed) ]
+  [ Construct(~id, k_old, seed, lastFreshSeed) ]
+  --[ Key(~id, k, seed, lastFreshSeed)
+    , UseSeed(~id, seed, lastFreshSeed) ]->
+  [ Construct(~id, k, seed, lastFreshSeed) ]
 
 rule RevealSeed:
   [ !Seed(~id, x) ]
@@ -37,22 +41,25 @@ rule RevealSeed:
   [ Out(x) ]
 
 lemma OuterLoopStep[reuse,use_induction]:
-  "All id k seed #t. Key(id, k, seed) @ #t
-    ==> Ex #x. Outer(id, seed) @ #x & #x < #t"
+  "All id k seed lastFreshSeed #t. Key(id, k, seed, lastFreshSeed) @ #t
+    ==> Ex #x. Outer(id, seed, lastFreshSeed) @ #x & #x < #t"
 
 lemma FreshSeedInstantiate[reuse,use_induction]:
-  "All id seed #t. Outer(id, seed) @ #t
-    ==> Ex s #x. FreshSeed(id, seed, s) @ #x"
+  "All id seed lastFreshSeed #t. Outer(id, seed, lastFreshSeed) @ #t
+    ==> Ex s #x. FreshSeed(id, lastFreshSeed, s) @ #x"
 
-lemma SeedSecrecy[reuse,use_induction,hide_lemma=OuterLoopStep,hide_lemma=FreshSeedInstantiate]:
-  "All id k seed #t1 #t2. Key(id, k, seed) @ #t1 & KU(k) @ #t2
+lemma SeedConstruction[reuse,use_induction,hide_lemma=FreshSeedInstantiate]:
+  "All id seed lastFreshSeed #t1 #t2. UseSeed(id, seed, lastFreshSeed) @ #t1 & KU(seed) @ #t2
+    ==> (Ex #x. KU(lastFreshSeed) @ #x)"
+
+lemma KeyConstruction[reuse,use_induction,hide_lemma=SeedKnowledge,hide_lemma=OuterLoopStep,hide_lemma=FreshSeedInstantiate]:
+  "All id k seed lastFreshSeed #t1 #t2. Key(id, k, seed, lastFreshSeed) @ #t1 & KU(k) @ #t2
     ==> (Ex #x. KU(seed) @ #x)"
 
-lemma KeySecrecy[reuse]:
-  "All id k seed #t. Key(id, k, seed) @ #t
+lemma KeySecrecy:
+  "All id k seed lastFreshSeed #t. Key(id, k, seed, lastFreshSeed) @ #t
     ==>   (not Ex #x. K(k) @ #x)
-        | (Ex x #x1 #x2. FreshSeed(id, seed, x) @ #x1
-            & RevealSeed(id, x) @ #x2
-            & #x1 < #x2)"
+        | (Ex x #x1 #x2. FreshSeed(id, lastFreshSeed, x) @ #x1
+            & RevealSeed(id, x) @ #x2)"
 
 end
