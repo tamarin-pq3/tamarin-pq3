@@ -224,6 +224,7 @@ elif argv[1] == 'Auto_RkSecretCompromiseKemSS':
       r(r'Session\(.+(\'[\w\d_]+\'|>|~kemSS),\s*[\w\d\.\(\)]+\s*\)\s*▶'),
 
       r(r'!KU\( prefix\(hkdf\(.+\'chain_key\'[\s\)]*@ #\w+(\.\d+)?$'),
+    '∀ ckC',
       r(r'^\(*last'),
       when_then(
         Token(r(r'^To(Sender|Receiver)\(\s*\)\s*@ (?P<tvar>#\w+(\.\d+)?)$'), max=-1),
@@ -244,6 +245,8 @@ elif argv[1] == 'Auto_RkSecretCompromiseKemSS':
       r(r'SessionInfo\(.+@ #t1$'),
       r(r'Session.+▶. #t1$'),
       r(r'!KU\(.+@ #t2$'),
+
+      'rk ⊏',
 
       r(r'^!KU\( suffix\('),
       r(r'^!KU\( hkdf\((hkdf\(|ecdhSS)'),
@@ -306,6 +309,7 @@ elif argv[1] == 'Auto_Secrecy':
       'RevealECDHKey',
       'RevealKemKey',
       r(r'Reveal(Chain|Message)Key\('),
+      'rk ⊏',
     ]),
   )
 elif argv[1] in ['Auto_RootKeyConnectionSend', 'Auto_RootKeyConnectionReceive']:
