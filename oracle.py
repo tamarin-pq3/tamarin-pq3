@@ -222,6 +222,7 @@ elif argv[1] == 'Auto_RkSecretCompromiseKemSS':
       r(r'\(∃ #x\. \(!KU\( ~?kemSS \) @ #x\).+\$Me'),
       r(r'!KU\( (Just\()?encap\((\'[\w_]+\'|<)'),
       r(r'Session\(.+(\'[\w\d_]+\'|>|~kemSS),\s*[\w\d\.\(\)]+\s*\)\s*▶'),
+      r(r'∃.+RevealRootKey'),
 
       r(r'!KU\( prefix\(hkdf\(.+\'chain_key\'[\s\)]*@ #\w+(\.\d+)?$'),
       '∀ ckC',
@@ -247,7 +248,6 @@ elif argv[1] == 'Auto_RkSecretCompromiseKemSS':
       r(r'!KU\(.+@ #t2$'),
 
       'rk ⊏',
-      r(r'∃.+RevealRootKey'),
 
       r(r'^!KU\( suffix\('),
       r(r'^!KU\( hkdf\((hkdf\(|ecdhSS)'),
