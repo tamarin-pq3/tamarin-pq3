@@ -277,7 +277,6 @@ rule ReceiverStart[color=#B4D9EF]:
     , IdentityKeyQueried(~id, $Them, theirIdPk)
     , SessionStart(theirIdPk)
     , PublicKeyRatchet(theirIdPk, 'g'^~ecdhSk, theirEcdhPk, ecdhSS, pqpk(~kemSk), None, None, kemSS, pqpk(~kemSk), prefix(rkCK))
-    , RootKeyDerived(~id, $Me, kemSS, prefix(rkCK))
     , PKRatchet()
     , ToReceiver()
     , MessageReceived(~id, %1, $Them, $Me, sdec(ciphertext, msgKey))
