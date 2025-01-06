@@ -1,7 +1,7 @@
 # Formal Analysis of the iMessage PQ3 Protocol
 
-This repository contains the formal models and proofs of our analysis of iMessage PQ3, a state-of-the-art messaging protocol providing strong security guarantees even against adversaries with quantum-computing capabilities.
-Our work is currently under submission for scientific publication.
+This repository contains the formal models, proofs, and a pseudocode specification of iMessage PQ3, a state-of-the-art messaging protocol providing strong security guarantees even against adversaries with quantum-computing capabilities.
+This work is currently under submission for scientific publication.
 
 ## Prerequisites
 
@@ -15,6 +15,7 @@ We used Tamarin version 1.8.0 and Maude versions 3.1 and 3.2.1.
 | `/case-study`| Contains the example theories used to illustrate our proof methodology. |
 | `/dev` | Contains scripts used by the modelers to construct proofs. Please ignore. |
 | `/proofs` | Contains proofs for lemmas that cannot be proven automatically. The folder contains more documentation. |
+| `/spec` | Contains a pseudocode specification of iMessage PQ3. |
 | `/model.spthy` | Our formal model of iMessage PQ3. |
 | `/oracle.py` | A custom proof heuristic aiding proof construction. |
 | `/prove-auto.sh` | A script that constructs proves for all automatically provable lemmas. |
