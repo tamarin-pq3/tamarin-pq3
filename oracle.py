@@ -545,7 +545,7 @@ elif argv[1] == 'Auto_NoninjectiveAgreement':
     ),
     r(r'!KU\( sign\(.*~idKey'),
   ])
-elif argv[1] == 'InjectiveMessageReceived':
+elif argv[1] == 'Auto_InjectiveMessageReceived':
   match = partial(prioritize, [
     r(r'^ECDHKeyGen'),
     r(r'!ECDHPreKey'),
