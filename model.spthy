@@ -741,6 +741,18 @@ lemma Auto_RkSecretCompromiseKemSS[reuse,use_induction,hide_lemma=Auto_SessionSt
           & ( (Ex rk #x. RevealRootKey(me, kemSS, rk) @ #x & rk = prefix(rkCK))
             | (Ex rk #x. RevealRootKey(them, kemSS, rk) @ #x & rk = prefix(rkCK)))))"
 
+// NOTE: The conjuncts on RevealRootKey abive are not needed for secrecy, but to
+// make the lemma provable by induction. When applying the IH, there will be
+// five cases (one for each disjunct). Cases 1-3 (instantiating KU(kemSS) and
+// RevealRootKey twice) will result in a contradiction immediately. Cases 4-5
+// (RevealChainKey twice) will not result in a contradiction, though, because
+// the reveal chain key will not equal suffix(rkCK) for the already instantiated
+// rule at timepoint #t1. However, in this case, the adversary must also access
+// a previous root key (expressed by the two respective conjuncts in the chain
+// key case). When using Auto_RootKeyMonotonicity, we know that this root key
+// must be a subterm of prefix(rkCK) and thus, we can derive a contradiction
+// to the disjuncts 2-3.
+
 // NOTE: This lemma is very close the Auto_ChainKeyMonotonicity, but I need this form
 // for Auto_MkCompromise. I decided to add it here instead of changing the
 // original one so that I don't need to reprove everything above.
