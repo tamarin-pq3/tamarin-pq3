@@ -3,9 +3,9 @@ theory iMessagePQ3 begin
 // Function signature and definition of the equational theory E
 
 builtins: diffie-hellman, natural-numbers
-functions: Just/1, None/0, concat/2, decap/2, default/2, encap/2,
-           fst/1, h/1, hkdf/2, pair/2, pk/1, pqpk/1, prefix/1, sdec/2, senc/2,
-           sign/2, snd/1, suffix/1, true/0, unjust/1, verify/3
+functions: Just/1, None/0, concat/2, decap/2, default/2, encap/2, fst/1,
+           h/1, hkdf/2, pair/2, pk/1, pqpk/1, prefix/1, sdec/2, senc/2, sign/2,
+           snd/1, suffix/1, true/0, unjust/1, verify/3
 equations:
     concat(prefix(x), suffix(x)) = x,
     decap(encap(k, pqpk(sk)), sk) = k,
@@ -19,8 +19,6 @@ equations:
 
 
 
-heuristic: O "./oracle.py"
-
 /* looping facts with injective instances: Session/15 */
 
 restriction Eq:
@@ -32,8 +30,7 @@ restriction Neq:
   // safety formula
 
 restriction OnlyOnce:
-  "∀ t #a #b.
-    ((OnlyOnce( t ) @ #a) ∧ (OnlyOnce( t ) @ #b)) ⇒ (#a = #b)"
+  "∀ t #a #b. ((OnlyOnce( t ) @ #a) ∧ (OnlyOnce( t ) @ #b)) ⇒ (#a = #b)"
   // safety formula
 
 
@@ -63,13 +60,12 @@ rule (modulo E) UserKeyGen[color=#fdfd96]:
    [ Fr( ~idKey ), Fr( ~preKey ), Fr( ~kemPreKey ) ]
   --[
   PrePQAttack( ), OnlyOnce( <'setup', $A> ),
-  ECDHPreKeyGen( $A, 'g'^~preKey ),
-  KemPreKeyGen( $A, pqpk(~kemPreKey) )
+  ECDHPreKeyGen( $A, 'g'^~preKey ), KemPreKeyGen( $A, pqpk(~kemPreKey) )
   ]->
    [
    !IdentityKey( $A, ~idKey ), !ECDHPreKey( $A, ~preKey ),
-   !KemPreKey( $A, ~kemPreKey ), Out( pk(~idKey) ),
-   Out( 'g'^~preKey ), Out( pqpk(~kemPreKey) ),
+   !KemPreKey( $A, ~kemPreKey ), Out( pk(~idKey) ), Out( 'g'^~preKey ),
+   Out( pqpk(~kemPreKey) ),
    Out( sign(<'nf_reg', pqpk(~kemPreKey), 'g'^~preKey>, ~idKey) ),
    !IDSIdentityData( $A, pk(~idKey) ),
    !IDSClientData( $A, 'g'^~preKey, pqpk(~kemPreKey),
@@ -178,8 +174,7 @@ rule (modulo E) QueryIDS[color=#fdfd96]:
        preKeySig
              = preKeySig.7
        prePk = prePk.7
-       z     = verify(preKeySig.7, <'nf_reg', kemPrePk.7, prePk.7>,
-                      idPk.7)
+       z     = verify(preKeySig.7, <'nf_reg', kemPrePk.7, prePk.7>, idPk.7)
 
     2. idPk  = pk(x.7)
        kemPrePk
@@ -198,17 +193,17 @@ rule (modulo E) SessionStartAsASender[color=#b4d9ef]:
    ]
   --[
   PrePQAttack( ), SessionInfo( ~id, %1, $Me, $Them ),
-  IdentityKeyQueried( ~id, $Them, theirIdPk ),
-  SessionStart( theirIdPk ),
+  IdentityKeyQueried( ~id, $Them, theirIdPk ), SessionStart( theirIdPk ),
   PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk,
                     theirEcdhPk^~ecdhSk, pqpk(~kemSk), Just(theirKemPk), None, ~kemSS,
                     theirKemPk,
                     prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, '0'), ~kemSS),
                                 <$Me, pk(~idKey), $Them, theirIdPk>))
   ),
-  PKRatchet( ), ToSender( ),
-  MessageSent( ~id, %1, $Me, $Them, ~msg ),
+  PKRatchet( ), ToSender( ), MessageSent( ~id, %1, $Me, $Them, ~msg ),
   SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, ~kemSS, theirKemPk,
+                  prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, '0'), ~kemSS),
+                              <$Me, pk(~idKey), $Them, theirIdPk>)),
                   suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, '0'), ~kemSS),
                               <$Me, pk(~idKey), $Them, theirIdPk>)),
                   hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, '0'), ~kemSS),
@@ -290,16 +285,16 @@ rule (modulo E) SessionStartAsASender[color=#b4d9ef]:
      ]
     --[
     PrePQAttack( ), SessionInfo( ~id, %1, $Me, $Them ),
-    IdentityKeyQueried( ~id, $Them, theirIdPk ),
-    SessionStart( theirIdPk ),
-    PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z,
-                      pqpk(~kemSk), Just(theirKemPk), None, ~kemSS, theirKemPk,
+    IdentityKeyQueried( ~id, $Them, theirIdPk ), SessionStart( theirIdPk ),
+    PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z, pqpk(~kemSk),
+                      Just(theirKemPk), None, ~kemSS, theirKemPk,
                       prefix(hkdf(hkdf(hkdf(z, '0'), ~kemSS),
                                   <$Me, pk(~idKey), $Them, theirIdPk>))
     ),
-    PKRatchet( ), ToSender( ),
-    MessageSent( ~id, %1, $Me, $Them, ~msg ),
+    PKRatchet( ), ToSender( ), MessageSent( ~id, %1, $Me, $Them, ~msg ),
     SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, ~kemSS, theirKemPk,
+                    prefix(hkdf(hkdf(hkdf(z, '0'), ~kemSS),
+                                <$Me, pk(~idKey), $Them, theirIdPk>)),
                     suffix(hkdf(hkdf(hkdf(z, '0'), ~kemSS),
                                 <$Me, pk(~idKey), $Them, theirIdPk>)),
                     hkdf(suffix(hkdf(hkdf(hkdf(z, '0'), ~kemSS),
@@ -424,8 +419,8 @@ rule (modulo E) SendSymmetricRatchet[color=#ff7f50]:
   --[
   PrePQAttack( ), SessionInfo( ~id, (%i%+%1), $Me, $Them ),
   MessageSent( ~id, (%i%+%1), $Me, $Them, ~msg ),
-  SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk, chainKey,
-                  hkdf(chainKey, 'msg_key')
+  SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk, rootKey,
+                  chainKey, hkdf(chainKey, 'msg_key')
   ),
   SymmetricRatchet( ),
   KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, theirEcdhPk^~ecdhSk,
@@ -436,15 +431,15 @@ rule (modulo E) SendSymmetricRatchet[color=#ff7f50]:
    [
    Out( <senc(~msg, hkdf(chainKey, 'msg_key')),
          sign(<'msg_sig', senc(~msg, hkdf(chainKey, 'msg_key')),
-               hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind'), 'g'^~ecdhSk,
-               (%i%+%1), <$Me, pk(~idKey), $Them, theirIdPk>, None, None, None>,
+               hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind'), 'g'^~ecdhSk, (%i%+%1),
+               <$Me, pk(~idKey), $Them, theirIdPk>, None, None, None>,
               ~idKey),
-         'g'^~ecdhSk, (%i%+%1),
-         hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind'), None, None, None>
+         'g'^~ecdhSk, (%i%+%1), hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind'),
+         None, None, None>
    ),
-   Session( ~id, (%i%+%1), 'S', $Me, ~ecdhSk, ~kemSk, $Them,
-            theirIdPk, theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS,
-            encapPk, rootKey, hkdf(chainKey, 'chain_key')
+   Session( ~id, (%i%+%1), 'S', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
+            theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk,
+            rootKey, hkdf(chainKey, 'chain_key')
    ),
    !ChainKey( ~id, (%i%+%1), $Me, chainKey ),
    !MessageKey( ~id, (%i%+%1), $Me, hkdf(chainKey, 'msg_key') )
@@ -463,27 +458,27 @@ rule (modulo E) SendSymmetricRatchet[color=#ff7f50]:
     --[
     PrePQAttack( ), SessionInfo( ~id, (%i%+%1), $Me, $Them ),
     MessageSent( ~id, (%i%+%1), $Me, $Them, ~msg ),
-    SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk, chainKey,
-                    hkdf(chainKey, 'msg_key')
+    SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk, rootKey,
+                    chainKey, hkdf(chainKey, 'msg_key')
     ),
     SymmetricRatchet( ),
     KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z, pqpk(~kemSk),
-              maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk, rootKey,
-              chainKey, hkdf(chainKey, 'msg_key')
+              maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk, rootKey, chainKey,
+              hkdf(chainKey, 'msg_key')
     )
     ]->
      [
      Out( <senc(~msg, hkdf(chainKey, 'msg_key')),
            sign(<'msg_sig', senc(~msg, hkdf(chainKey, 'msg_key')),
-                 hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind'), 'g'^~ecdhSk,
-                 (%i%+%1), <$Me, pk(~idKey), $Them, theirIdPk>, None, None, None>,
+                 hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind'), 'g'^~ecdhSk, (%i%+%1),
+                 <$Me, pk(~idKey), $Them, theirIdPk>, None, None, None>,
                 ~idKey),
-           'g'^~ecdhSk, (%i%+%1),
-           hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind'), None, None, None>
+           'g'^~ecdhSk, (%i%+%1), hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind'),
+           None, None, None>
      ),
-     Session( ~id, (%i%+%1), 'S', $Me, ~ecdhSk, ~kemSk, $Them,
-              theirIdPk, theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS,
-              encapPk, rootKey, hkdf(chainKey, 'chain_key')
+     Session( ~id, (%i%+%1), 'S', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
+              theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk,
+              rootKey, hkdf(chainKey, 'chain_key')
      ),
      !ChainKey( ~id, (%i%+%1), $Me, chainKey ),
      !MessageKey( ~id, (%i%+%1), $Me, hkdf(chainKey, 'msg_key') )
@@ -534,16 +529,16 @@ rule (modulo E) SendSymmetricRatchet[color=#ff7f50]:
 rule (modulo E) ReceiverStart[color=#b4d9ef]:
    [
    Fr( ~id ),
-   In( <ciphertext, signature, theirEcdhPk, %1, msgKeyIndicator,
-        None, Just(kemEncap), Just(preKeyHash)>
+   In( <ciphertext, signature, theirEcdhPk, %1, msgKeyIndicator, None,
+        Just(kemEncap), Just(preKeyHash)>
    ),
    !IdentityKey( $Me, ~idKey ), !ECDHPreKey( $Me, ~ecdhSk ),
    !KemPreKey( $Me, ~kemSk ),
    IDSQuery( $Them, theirIdPk, sprePk, skemPrePk, preKeySig )
    ]
   --[
-  PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ),
-  Neq( theirEcdhPk, 'g' ), Neq( decap(kemEncap, ~kemSk), '0' ),
+  PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ), Neq( theirEcdhPk, 'g' ),
+  Neq( decap(kemEncap, ~kemSk), '0' ),
   Eq( verify(signature,
              <'msg_sig', ciphertext, msgKeyIndicator, theirEcdhPk, %1,
               <$Them, theirIdPk, $Me, pk(~idKey)>, None, Just(kemEncap),
@@ -563,11 +558,10 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
            'msg_key_ind')
   ),
   SessionInfo( ~id, %1, $Me, $Them ),
-  IdentityKeyQueried( ~id, $Them, theirIdPk ),
-  SessionStart( theirIdPk ),
+  IdentityKeyQueried( ~id, $Them, theirIdPk ), SessionStart( theirIdPk ),
   PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk,
-                    theirEcdhPk^~ecdhSk, pqpk(~kemSk), None, None,
-                    decap(kemEncap, ~kemSk), pqpk(~kemSk),
+                    theirEcdhPk^~ecdhSk, pqpk(~kemSk), None, None, decap(kemEncap, ~kemSk),
+                    pqpk(~kemSk),
                     prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, '0'),
                                      decap(kemEncap, ~kemSk)),
                                 <$Them, theirIdPk, $Me, pk(~idKey)>))
@@ -582,6 +576,9 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
   ),
   SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, decap(kemEncap, ~kemSk),
                   pqpk(~kemSk),
+                  prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, '0'),
+                                   decap(kemEncap, ~kemSk)),
+                              <$Them, theirIdPk, $Me, pk(~idKey)>)),
                   suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, '0'),
                                    decap(kemEncap, ~kemSk)),
                               <$Them, theirIdPk, $Me, pk(~idKey)>)),
@@ -590,8 +587,7 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
                                    <$Them, theirIdPk, $Me, pk(~idKey)>)),
                        'msg_key')
   ),
-  DecapKemSS( ~id, $Me, $Them, decap(kemEncap, ~kemSk), pqpk(~kemSk)
-  ),
+  DecapKemSS( ~id, $Me, $Them, decap(kemEncap, ~kemSk), pqpk(~kemSk) ),
   KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, theirEcdhPk^~ecdhSk,
             pqpk(~kemSk), None, None, decap(kemEncap, ~kemSk), pqpk(~kemSk),
             prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, '0'),
@@ -639,16 +635,16 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
   rule (modulo AC) ReceiverStart[color=#b4d9ef]:
      [
      Fr( ~id ),
-     In( <ciphertext, signature, theirEcdhPk, %1, msgKeyIndicator,
-          None, Just(kemEncap), Just(preKeyHash)>
+     In( <ciphertext, signature, theirEcdhPk, %1, msgKeyIndicator, None,
+          Just(kemEncap), Just(preKeyHash)>
      ),
      !IdentityKey( $Me, ~idKey ), !ECDHPreKey( $Me, ~ecdhSk ),
      !KemPreKey( $Me, ~kemSk ),
      IDSQuery( $Them, theirIdPk, sprePk, skemPrePk, preKeySig )
      ]
     --[
-    PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ),
-    Neq( theirEcdhPk, 'g' ), Neq( z, '0' ), Eq( z.2, true ),
+    PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ), Neq( theirEcdhPk, 'g' ),
+    Neq( z, '0' ), Eq( z.2, true ),
     Eq( preKeyHash,
         h(<'g'^~ecdhSk, pqpk(~kemSk),
            sign(<'nf_reg', pqpk(~kemSk), 'g'^~ecdhSk>, ~idKey)>)
@@ -660,16 +656,16 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
              'msg_key_ind')
     ),
     SessionInfo( ~id, %1, $Me, $Them ),
-    IdentityKeyQueried( ~id, $Them, theirIdPk ),
-    SessionStart( theirIdPk ),
-    PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z.1,
-                      pqpk(~kemSk), None, None, z, pqpk(~kemSk),
+    IdentityKeyQueried( ~id, $Them, theirIdPk ), SessionStart( theirIdPk ),
+    PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z.1, pqpk(~kemSk),
+                      None, None, z, pqpk(~kemSk),
                       prefix(hkdf(hkdf(hkdf(z.1, '0'), z),
                                   <$Them, theirIdPk, $Me, pk(~idKey)>))
     ),
-    PKRatchet( ), ToReceiver( ),
-    MessageReceived( ~id, %1, $Them, $Me, z.3 ),
+    PKRatchet( ), ToReceiver( ), MessageReceived( ~id, %1, $Them, $Me, z.3 ),
     SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, z, pqpk(~kemSk),
+                    prefix(hkdf(hkdf(hkdf(z.1, '0'), z),
+                                <$Them, theirIdPk, $Me, pk(~idKey)>)),
                     suffix(hkdf(hkdf(hkdf(z.1, '0'), z),
                                 <$Them, theirIdPk, $Me, pk(~idKey)>)),
                     hkdf(suffix(hkdf(hkdf(hkdf(z.1, '0'), z),
@@ -677,8 +673,8 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
                          'msg_key')
     ),
     DecapKemSS( ~id, $Me, $Them, z, pqpk(~kemSk) ),
-    KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z.1, pqpk(~kemSk),
-              None, None, z, pqpk(~kemSk),
+    KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z.1, pqpk(~kemSk), None,
+              None, z, pqpk(~kemSk),
               prefix(hkdf(hkdf(hkdf(z.1, '0'), z),
                           <$Them, theirIdPk, $Me, pk(~idKey)>)),
               suffix(hkdf(hkdf(hkdf(z.1, '0'), z),
@@ -871,14 +867,12 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         z     = decap(kemEncap.55, ~kemSk.53)
         z.1   = z.66
         z.2   = verify(signature.59,
-                       <'msg_sig', ciphertext.54, msgKeyIndicator.56,
-                        z.66^inv(~ecdhSk.50), %1,
+                       <'msg_sig', ciphertext.54, msgKeyIndicator.56, z.66^inv(~ecdhSk.50), %1,
                         <$Them.49, theirIdPk.63, $Me.48, pk(~idKey.52)>, None,
                         Just(kemEncap.55), Just(preKeyHash.57)>,
                        theirIdPk.63)
         z.3   = sdec(ciphertext.54,
-                     hkdf(suffix(hkdf(hkdf(hkdf(z.66, '0'),
-                                           decap(kemEncap.55, ~kemSk.53)),
+                     hkdf(suffix(hkdf(hkdf(hkdf(z.66, '0'), decap(kemEncap.55, ~kemSk.53)),
                                       <$Them.49, theirIdPk.63, $Me.48, pk(~idKey.52)>)),
                           'msg_key'))
 
@@ -907,8 +901,7 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         z     = z.65
         z.1   = z.66
         z.2   = verify(signature.59,
-                       <'msg_sig', ciphertext.54, msgKeyIndicator.56,
-                        z.66^inv(~ecdhSk.50), %1,
+                       <'msg_sig', ciphertext.54, msgKeyIndicator.56, z.66^inv(~ecdhSk.50), %1,
                         <$Them.49, theirIdPk.63, $Me.48, pk(~idKey.52)>, None,
                         Just(encap(z.65, pqpk(~kemSk.53))), Just(preKeyHash.57)>,
                        theirIdPk.63)
@@ -966,8 +959,7 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
               = ~kemSk.62
         ciphertext
               = senc(z.84,
-                     hkdf(suffix(hkdf(hkdf(hkdf(z.75, '0'),
-                                           decap(kemEncap.64, ~kemSk.62)),
+                     hkdf(suffix(hkdf(hkdf(hkdf(z.75, '0'), decap(kemEncap.64, ~kemSk.62)),
                                       <$Them.58, theirIdPk.72, $Me.57, pk(~idKey.61)>)),
                           'msg_key'))
         kemEncap
@@ -987,8 +979,7 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         z.2   = verify(signature.68,
                        <'msg_sig',
                         senc(z.84,
-                             hkdf(suffix(hkdf(hkdf(hkdf(z.75, '0'),
-                                                   decap(kemEncap.64, ~kemSk.62)),
+                             hkdf(suffix(hkdf(hkdf(hkdf(z.75, '0'), decap(kemEncap.64, ~kemSk.62)),
                                               <$Them.58, theirIdPk.72, $Me.57, pk(~idKey.61)>)),
                                   'msg_key')),
                         msgKeyIndicator.65, z.75^inv(~ecdhSk.59), %1,
@@ -1550,8 +1541,7 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
               = ~kemSk.336
         ciphertext
               = senc(z.358,
-                     hkdf(suffix(hkdf(hkdf(hkdf(z.349, '0'),
-                                           decap(kemEncap.338, ~kemSk.336)),
+                     hkdf(suffix(hkdf(hkdf(hkdf(z.349, '0'), decap(kemEncap.338, ~kemSk.336)),
                                       <$Them.332, pk(x.660), $Me.331, pk(~idKey.335)>)),
                           'msg_key'))
         kemEncap
@@ -1563,8 +1553,7 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         signature
               = sign(<'msg_sig',
                       senc(z.358,
-                           hkdf(suffix(hkdf(hkdf(hkdf(z.349, '0'),
-                                                 decap(kemEncap.338, ~kemSk.336)),
+                           hkdf(suffix(hkdf(hkdf(hkdf(z.349, '0'), decap(kemEncap.338, ~kemSk.336)),
                                             <$Them.332, pk(x.660), $Me.331, pk(~idKey.335)>)),
                                 'msg_key')),
                       msgKeyIndicator.339, z.349^inv(~ecdhSk.333), %1,
@@ -1590,8 +1579,7 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
               = ~kemSk.336
         ciphertext
               = senc(z.358,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.345^~ecdhSk.333, '0'),
-                                           z.348),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.345^~ecdhSk.333, '0'), z.348),
                                       <$Them.332, pk(x.660), $Me.331, pk(~idKey.335)>)),
                           'msg_key'))
         kemEncap
@@ -1603,8 +1591,7 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         signature
               = sign(<'msg_sig',
                       senc(z.358,
-                           hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.345^~ecdhSk.333, '0'),
-                                                 z.348),
+                           hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.345^~ecdhSk.333, '0'), z.348),
                                             <$Them.332, pk(x.660), $Me.331, pk(~idKey.335)>)),
                                 'msg_key')),
                       msgKeyIndicator.339, theirEcdhPk.345, %1,
@@ -2101,9 +2088,9 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         preKeyHash
               = preKeyHash.342
         signature
-              = sign(<'msg_sig', ciphertext.339, msgKeyIndicator.341,
-                      DH_neutral, %1, <$Them.334, pk(x.664), $Me.333, pk(~idKey.337)>,
-                      None, Just(kemEncap.340), Just(preKeyHash.342)>,
+              = sign(<'msg_sig', ciphertext.339, msgKeyIndicator.341, DH_neutral, %1,
+                      <$Them.334, pk(x.664), $Me.333, pk(~idKey.337)>, None,
+                      Just(kemEncap.340), Just(preKeyHash.342)>,
                      x.664)
         theirEcdhPk
               = DH_neutral
@@ -2133,9 +2120,9 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         preKeyHash
               = preKeyHash.342
         signature
-              = sign(<'msg_sig', ciphertext.339, msgKeyIndicator.341,
-                      DH_neutral, %1, <$Them.334, pk(x.664), $Me.333, pk(~idKey.337)>,
-                      None, Just(encap(z.350, pqpk(~kemSk.338))), Just(preKeyHash.342)>,
+              = sign(<'msg_sig', ciphertext.339, msgKeyIndicator.341, DH_neutral, %1,
+                      <$Them.334, pk(x.664), $Me.333, pk(~idKey.337)>, None,
+                      Just(encap(z.350, pqpk(~kemSk.338))), Just(preKeyHash.342)>,
                      x.664)
         theirEcdhPk
               = DH_neutral
@@ -2166,9 +2153,8 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         preKeyHash
               = preKeyHash.343
         signature
-              = sign(<'msg_sig', ciphertext.340, msgKeyIndicator.342,
-                      theirEcdhPk.348, %1,
-                      <$Them.335, pk(x.666), $Me.334, pk(~idKey.338)>, None,
+              = sign(<'msg_sig', ciphertext.340, msgKeyIndicator.342, theirEcdhPk.348,
+                      %1, <$Them.335, pk(x.666), $Me.334, pk(~idKey.338)>, None,
                       Just(kemEncap.341), Just(preKeyHash.343)>,
                      x.666)
         theirEcdhPk
@@ -2214,8 +2200,7 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         z.1   = z.352
         z.2   = true
         z.3   = sdec(ciphertext.340,
-                     hkdf(suffix(hkdf(hkdf(hkdf(z.352, '0'),
-                                           decap(kemEncap.341, ~kemSk.339)),
+                     hkdf(suffix(hkdf(hkdf(hkdf(z.352, '0'), decap(kemEncap.341, ~kemSk.339)),
                                       <$Them.335, pk(x.666), $Me.334, pk(~idKey.338)>)),
                           'msg_key'))
 
@@ -2236,9 +2221,8 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         preKeyHash
               = preKeyHash.343
         signature
-              = sign(<'msg_sig', ciphertext.340, msgKeyIndicator.342,
-                      theirEcdhPk.348, %1,
-                      <$Them.335, pk(x.666), $Me.334, pk(~idKey.338)>, None,
+              = sign(<'msg_sig', ciphertext.340, msgKeyIndicator.342, theirEcdhPk.348,
+                      %1, <$Them.335, pk(x.666), $Me.334, pk(~idKey.338)>, None,
                       Just(encap(z.351, pqpk(~kemSk.339))), Just(preKeyHash.343)>,
                      x.666)
         theirEcdhPk
@@ -2249,8 +2233,7 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         z.1   = theirEcdhPk.348^~ecdhSk.336
         z.2   = true
         z.3   = sdec(ciphertext.340,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.348^~ecdhSk.336, '0'),
-                                           z.351),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.348^~ecdhSk.336, '0'), z.351),
                                       <$Them.335, pk(x.666), $Me.334, pk(~idKey.338)>)),
                           'msg_key'))
 
@@ -2377,9 +2360,9 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         preKeyHash
               = preKeyHash.344
         signature
-              = sign(<'msg_sig', ciphertext.341, msgKeyIndicator.343,
-                      x.666^x.667, %1, <$Them.336, pk(x.668), $Me.335, pk(~idKey.339)>,
-                      None, Just(kemEncap.342), Just(preKeyHash.344)>,
+              = sign(<'msg_sig', ciphertext.341, msgKeyIndicator.343, x.666^x.667, %1,
+                      <$Them.336, pk(x.668), $Me.335, pk(~idKey.339)>, None,
+                      Just(kemEncap.342), Just(preKeyHash.344)>,
                      x.668)
         theirEcdhPk
               = x.666^x.667
@@ -2551,9 +2534,9 @@ rule (modulo E) ReceiverStart[color=#b4d9ef]:
         preKeyHash
               = preKeyHash.344
         signature
-              = sign(<'msg_sig', ciphertext.341, msgKeyIndicator.343,
-                      x.666^x.667, %1, <$Them.336, pk(x.668), $Me.335, pk(~idKey.339)>,
-                      None, Just(encap(z.352, pqpk(~kemSk.340))), Just(preKeyHash.344)>,
+              = sign(<'msg_sig', ciphertext.341, msgKeyIndicator.343, x.666^x.667, %1,
+                      <$Them.336, pk(x.668), $Me.335, pk(~idKey.339)>, None,
+                      Just(encap(z.352, pqpk(~kemSk.340))), Just(preKeyHash.344)>,
                      x.668)
         theirEcdhPk
               = x.666^x.667
@@ -2783,15 +2766,13 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
             theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk,
             rootKey, chainKey
    ),
-   In( <ciphertext, signature, theirEcdhPk, (%i%+%1),
-        msgKeyIndicator, None, None, None>
+   In( <ciphertext, signature, theirEcdhPk, (%i%+%1), msgKeyIndicator,
+        None, None, None>
    )
    ]
   --[
-  PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ),
-  Neq( theirEcdhPk, 'g' ),
-  Eq( msgKeyIndicator, hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind')
-  ),
+  PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ), Neq( theirEcdhPk, 'g' ),
+  Eq( msgKeyIndicator, hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind') ),
   Eq( verify(signature,
              <'msg_sig', ciphertext, msgKeyIndicator, theirEcdhPk, (%i%+%1),
               <$Them, theirIdPk, $Me, pk(~idKey)>, None, None, None>,
@@ -2802,8 +2783,8 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
   MessageReceived( ~id, (%i%+%1), $Them, $Me,
                    sdec(ciphertext, hkdf(chainKey, 'msg_key'))
   ),
-  SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk, chainKey,
-                  hkdf(chainKey, 'msg_key')
+  SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk, rootKey,
+                  chainKey, hkdf(chainKey, 'msg_key')
   ),
   SymmetricRatchet( ),
   KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, theirEcdhPk^~ecdhSk,
@@ -2812,9 +2793,9 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
   )
   ]->
    [
-   Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them,
-            theirIdPk, theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS,
-            encapPk, rootKey, hkdf(chainKey, 'chain_key')
+   Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
+            theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk,
+            rootKey, hkdf(chainKey, 'chain_key')
    ),
    !ChainKey( ~id, (%i%+%1), $Me, chainKey ),
    !MessageKey( ~id, (%i%+%1), $Me, hkdf(chainKey, 'msg_key') )
@@ -2829,30 +2810,28 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
               theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk,
               rootKey, chainKey
      ),
-     In( <ciphertext, signature, theirEcdhPk, (%i%+%1),
-          msgKeyIndicator, None, None, None>
+     In( <ciphertext, signature, theirEcdhPk, (%i%+%1), msgKeyIndicator,
+          None, None, None>
      )
      ]
     --[
-    PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ),
-    Neq( theirEcdhPk, 'g' ),
-    Eq( msgKeyIndicator, hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind')
-    ),
+    PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ), Neq( theirEcdhPk, 'g' ),
+    Eq( msgKeyIndicator, hkdf(hkdf(chainKey, 'msg_key'), 'msg_key_ind') ),
     Eq( z, true ), SessionInfo( ~id, (%i%+%1), $Me, $Them ),
     MessageReceived( ~id, (%i%+%1), $Them, $Me, z.1 ),
-    SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk, chainKey,
-                    hkdf(chainKey, 'msg_key')
+    SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk, rootKey,
+                    chainKey, hkdf(chainKey, 'msg_key')
     ),
     SymmetricRatchet( ),
     KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z.2, pqpk(~kemSk),
-              maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk, rootKey,
-              chainKey, hkdf(chainKey, 'msg_key')
+              maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk, rootKey, chainKey,
+              hkdf(chainKey, 'msg_key')
     )
     ]->
      [
-     Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them,
-              theirIdPk, theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS,
-              encapPk, rootKey, hkdf(chainKey, 'chain_key')
+     Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
+              theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk,
+              rootKey, hkdf(chainKey, 'chain_key')
      ),
      !ChainKey( ~id, (%i%+%1), $Me, chainKey ),
      !MessageKey( ~id, (%i%+%1), $Me, hkdf(chainKey, 'msg_key') )
@@ -2878,8 +2857,8 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
               = theirIdPk.62
         z     = verify(signature.60,
                        <'msg_sig', ciphertext.53, msgKeyIndicator.58, theirEcdhPk.61,
-                        (%i.63%+%1), <$Them.47, theirIdPk.62, $Me.46, pk(~idKey.50)>,
-                        None, None, None>,
+                        (%i.63%+%1), <$Them.47, theirIdPk.62, $Me.46, pk(~idKey.50)>, None,
+                        None, None>,
                        theirIdPk.62)
         %i    = %i.63
         z.1   = sdec(ciphertext.53, hkdf(chainKey.52, 'msg_key'))
@@ -2902,9 +2881,8 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         theirIdPk
               = theirIdPk.62
         z     = verify(signature.60,
-                       <'msg_sig', ciphertext.53, msgKeyIndicator.58, DH_neutral,
-                        (%i.63%+%1), <$Them.47, theirIdPk.62, $Me.46, pk(~idKey.50)>,
-                        None, None, None>,
+                       <'msg_sig', ciphertext.53, msgKeyIndicator.58, DH_neutral, (%i.63%+%1),
+                        <$Them.47, theirIdPk.62, $Me.46, pk(~idKey.50)>, None, None, None>,
                        theirIdPk.62)
         %i    = %i.63
         z.1   = sdec(ciphertext.53, hkdf(chainKey.52, 'msg_key'))
@@ -2981,9 +2959,9 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         theirIdPk
               = theirIdPk.71
         z     = verify(signature.69,
-                       <'msg_sig', ciphertext.62, msgKeyIndicator.67,
-                        z.81^inv(~ecdhSk.57), (%i.72%+%1),
-                        <$Them.56, theirIdPk.71, $Me.55, pk(~idKey.59)>, None, None, None>,
+                       <'msg_sig', ciphertext.62, msgKeyIndicator.67, z.81^inv(~ecdhSk.57),
+                        (%i.72%+%1), <$Them.56, theirIdPk.71, $Me.55, pk(~idKey.59)>, None,
+                        None, None>,
                        theirIdPk.71)
         %i    = %i.72
         z.1   = sdec(ciphertext.62, hkdf(chainKey.61, 'msg_key'))
@@ -3036,8 +3014,8 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
               = theirIdPk.274
         z     = verify(signature.272,
                        <'msg_sig', ciphertext.265, msgKeyIndicator.270, x.513^x.514,
-                        (%i.275%+%1), <$Them.259, theirIdPk.274, $Me.258, pk(~idKey.262)>,
-                        None, None, None>,
+                        (%i.275%+%1), <$Them.259, theirIdPk.274, $Me.258, pk(~idKey.262)>, None,
+                        None, None>,
                        theirIdPk.274)
         %i    = %i.275
         z.1   = sdec(ciphertext.265, hkdf(chainKey.264, 'msg_key'))
@@ -3064,8 +3042,7 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         z     = verify(signature.281,
                        <'msg_sig', senc(z.291, hkdf(chainKey.273, 'msg_key')),
                         msgKeyIndicator.279, x.531^x.532, (%i.284%+%1),
-                        <$Them.268, theirIdPk.283, $Me.267, pk(~idKey.271)>, None, None,
-                        None>,
+                        <$Them.268, theirIdPk.283, $Me.267, pk(~idKey.271)>, None, None, None>,
                        theirIdPk.283)
         %i    = %i.284
         z.1   = z.291
@@ -3092,8 +3069,7 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         z     = verify(signature.285,
                        <'msg_sig', ciphertext.278, msgKeyIndicator.283,
                         x.539^inv((~ecdhSk.273*x.540)), (%i.288%+%1),
-                        <$Them.272, theirIdPk.287, $Me.271, pk(~idKey.275)>, None, None,
-                        None>,
+                        <$Them.272, theirIdPk.287, $Me.271, pk(~idKey.275)>, None, None, None>,
                        theirIdPk.287)
         %i    = %i.288
         z.1   = sdec(ciphertext.278, hkdf(chainKey.277, 'msg_key'))
@@ -3120,8 +3096,7 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         z     = verify(signature.285,
                        <'msg_sig', ciphertext.278, msgKeyIndicator.283,
                         x.539^(x.540*inv(~ecdhSk.273)), (%i.288%+%1),
-                        <$Them.272, theirIdPk.287, $Me.271, pk(~idKey.275)>, None, None,
-                        None>,
+                        <$Them.272, theirIdPk.287, $Me.271, pk(~idKey.275)>, None, None, None>,
                        theirIdPk.287)
         %i    = %i.288
         z.1   = sdec(ciphertext.278, hkdf(chainKey.277, 'msg_key'))
@@ -3148,8 +3123,7 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         z     = verify(signature.285,
                        <'msg_sig', senc(z.295, hkdf(chainKey.277, 'msg_key')),
                         msgKeyIndicator.283, x.539^inv((~ecdhSk.273*x.540)), (%i.288%+%1),
-                        <$Them.272, theirIdPk.287, $Me.271, pk(~idKey.275)>, None, None,
-                        None>,
+                        <$Them.272, theirIdPk.287, $Me.271, pk(~idKey.275)>, None, None, None>,
                        theirIdPk.287)
         %i    = %i.288
         z.1   = z.295
@@ -3176,8 +3150,7 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         z     = verify(signature.285,
                        <'msg_sig', senc(z.295, hkdf(chainKey.277, 'msg_key')),
                         msgKeyIndicator.283, x.539^(x.540*inv(~ecdhSk.273)), (%i.288%+%1),
-                        <$Them.272, theirIdPk.287, $Me.271, pk(~idKey.275)>, None, None,
-                        None>,
+                        <$Them.272, theirIdPk.287, $Me.271, pk(~idKey.275)>, None, None, None>,
                        theirIdPk.287)
         %i    = %i.288
         z.1   = z.295
@@ -3204,8 +3177,7 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         z     = verify(signature.286,
                        <'msg_sig', ciphertext.279, msgKeyIndicator.284,
                         x.540^(x.541*inv((~ecdhSk.274*x.542))), (%i.289%+%1),
-                        <$Them.273, theirIdPk.288, $Me.272, pk(~idKey.276)>, None, None,
-                        None>,
+                        <$Them.273, theirIdPk.288, $Me.272, pk(~idKey.276)>, None, None, None>,
                        theirIdPk.288)
         %i    = %i.289
         z.1   = sdec(ciphertext.279, hkdf(chainKey.278, 'msg_key'))
@@ -3232,8 +3204,8 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         z     = verify(signature.286,
                        <'msg_sig', senc(z.296, hkdf(chainKey.278, 'msg_key')),
                         msgKeyIndicator.284, x.540^(x.541*inv((~ecdhSk.274*x.542))),
-                        (%i.289%+%1), <$Them.273, theirIdPk.288, $Me.272, pk(~idKey.276)>,
-                        None, None, None>,
+                        (%i.289%+%1), <$Them.273, theirIdPk.288, $Me.272, pk(~idKey.276)>, None,
+                        None, None>,
                        theirIdPk.288)
         %i    = %i.289
         z.1   = z.296
@@ -3250,9 +3222,9 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         msgKeyIndicator
               = msgKeyIndicator.284
         signature
-              = sign(<'msg_sig', ciphertext.279, msgKeyIndicator.284,
-                      DH_neutral, (%i.289%+%1),
-                      <$Them.273, pk(x.542), $Me.272, pk(~idKey.276)>, None, None, None>,
+              = sign(<'msg_sig', ciphertext.279, msgKeyIndicator.284, DH_neutral,
+                      (%i.289%+%1), <$Them.273, pk(x.542), $Me.272, pk(~idKey.276)>, None,
+                      None, None>,
                      x.542)
         theirEcdhPk
               = DH_neutral
@@ -3300,9 +3272,9 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         msgKeyIndicator
               = msgKeyIndicator.285
         signature
-              = sign(<'msg_sig', ciphertext.280, msgKeyIndicator.285,
-                      theirEcdhPk.288, (%i.290%+%1),
-                      <$Them.274, pk(x.544), $Me.273, pk(~idKey.277)>, None, None, None>,
+              = sign(<'msg_sig', ciphertext.280, msgKeyIndicator.285, theirEcdhPk.288,
+                      (%i.290%+%1), <$Them.274, pk(x.544), $Me.273, pk(~idKey.277)>, None,
+                      None, None>,
                      x.544)
         theirEcdhPk
               = theirEcdhPk.288
@@ -3404,9 +3376,9 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         msgKeyIndicator
               = msgKeyIndicator.286
         signature
-              = sign(<'msg_sig', ciphertext.281, msgKeyIndicator.286,
-                      x.543^x.544, (%i.291%+%1),
-                      <$Them.275, pk(x.546), $Me.274, pk(~idKey.278)>, None, None, None>,
+              = sign(<'msg_sig', ciphertext.281, msgKeyIndicator.286, x.543^x.544,
+                      (%i.291%+%1), <$Them.275, pk(x.546), $Me.274, pk(~idKey.278)>, None,
+                      None, None>,
                      x.546)
         theirEcdhPk
               = x.543^x.544
@@ -3588,8 +3560,8 @@ rule (modulo E) ReceiveSymmetricRatchet[color=#ff7f50]:
         signature
               = sign(<'msg_sig', senc(z.299, hkdf(chainKey.281, 'msg_key')),
                       msgKeyIndicator.287, x.544^(x.545*inv((~ecdhSk.277*x.546))),
-                      (%i.292%+%1), <$Them.276, pk(x.548), $Me.275, pk(~idKey.279)>,
-                      None, None, None>,
+                      (%i.292%+%1), <$Them.276, pk(x.548), $Me.275, pk(~idKey.279)>, None,
+                      None, None>,
                      x.548)
         theirEcdhPk
               = x.544^(x.545*inv((~ecdhSk.277*x.546)))
@@ -3619,11 +3591,10 @@ rule (modulo E) NoFreshKemSk[color=#6495ed]:
 
 rule (modulo E) PublicKeyRatchetNewSenderSomeNewKemSS[color=#b4d9ef]:
    [
-   Fr( ~ecdhSk ), Fr( ~kemSS ), Fr( ~msg ),
-   !IdentityKey( $Me, ~idKey ),
+   Fr( ~ecdhSk ), Fr( ~kemSS ), Fr( ~msg ), !IdentityKey( $Me, ~idKey ),
    Session( ~id, %i, 'R', $Me, discard0, ~oldKemSk, $Them, theirIdPk,
-            theirEcdhPk, discard1, Just(theirKemPk), discard2, discard3,
-            rootKey, discard4
+            theirEcdhPk, discard1, Just(theirKemPk), discard2, discard3, rootKey,
+            discard4
    ),
    NewKemKey( $Me, $Them, maybeNewKemSk, maybeMyNewKemPk )
    ]
@@ -3638,6 +3609,8 @@ rule (modulo E) PublicKeyRatchetNewSenderSomeNewKemSS[color=#b4d9ef]:
   PKRatchet( ), ToSender( ),
   MessageSent( ~id, (%i%+%1), $Me, $Them, ~msg ),
   SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, ~kemSS, theirKemPk,
+                  prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), ~kemSS),
+                              <$Me, pk(~idKey), $Them, theirIdPk>)),
                   suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), ~kemSS),
                               <$Me, pk(~idKey), $Them, theirIdPk>)),
                   hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), ~kemSS),
@@ -3674,8 +3647,7 @@ rule (modulo E) PublicKeyRatchetNewSenderSomeNewKemSS[color=#b4d9ef]:
                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), ~kemSS),
                                      <$Me, pk(~idKey), $Them, theirIdPk>)),
                          'msg_key')),
-               hkdf(hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey),
-                                          ~kemSS),
+               hkdf(hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), ~kemSS),
                                      <$Me, pk(~idKey), $Them, theirIdPk>)),
                          'msg_key'),
                     'msg_key_ind'),
@@ -3683,8 +3655,7 @@ rule (modulo E) PublicKeyRatchetNewSenderSomeNewKemSS[color=#b4d9ef]:
                maybeMyNewKemPk, Just(encap(~kemSS, theirKemPk)), None>,
               ~idKey),
          'g'^~ecdhSk, (%i%+%1),
-         hkdf(hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey),
-                                    ~kemSS),
+         hkdf(hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), ~kemSS),
                                <$Me, pk(~idKey), $Them, theirIdPk>)),
                    'msg_key'),
               'msg_key_ind'),
@@ -3719,11 +3690,10 @@ rule (modulo E) PublicKeyRatchetNewSenderSomeNewKemSS[color=#b4d9ef]:
   /*
   rule (modulo AC) PublicKeyRatchetNewSenderSomeNewKemSS[color=#b4d9ef]:
      [
-     Fr( ~ecdhSk ), Fr( ~kemSS ), Fr( ~msg ),
-     !IdentityKey( $Me, ~idKey ),
+     Fr( ~ecdhSk ), Fr( ~kemSS ), Fr( ~msg ), !IdentityKey( $Me, ~idKey ),
      Session( ~id, %i, 'R', $Me, discard0, ~oldKemSk, $Them, theirIdPk,
-              theirEcdhPk, discard1, Just(theirKemPk), discard2, discard3,
-              rootKey, discard4
+              theirEcdhPk, discard1, Just(theirKemPk), discard2, discard3, rootKey,
+              discard4
      ),
      NewKemKey( $Me, $Them, maybeNewKemSk, maybeMyNewKemPk )
      ]
@@ -3737,14 +3707,16 @@ rule (modulo E) PublicKeyRatchetNewSenderSomeNewKemSS[color=#b4d9ef]:
     PKRatchet( ), ToSender( ),
     MessageSent( ~id, (%i%+%1), $Me, $Them, ~msg ),
     SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, ~kemSS, theirKemPk,
+                    prefix(hkdf(hkdf(hkdf(z, rootKey), ~kemSS),
+                                <$Me, pk(~idKey), $Them, theirIdPk>)),
                     suffix(hkdf(hkdf(hkdf(z, rootKey), ~kemSS),
                                 <$Me, pk(~idKey), $Them, theirIdPk>)),
                     hkdf(suffix(hkdf(hkdf(hkdf(z, rootKey), ~kemSS),
                                      <$Me, pk(~idKey), $Them, theirIdPk>)),
                          'msg_key')
     ),
-    KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z, z.2,
-              Just(theirKemPk), None, ~kemSS, theirKemPk,
+    KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z, z.2, Just(theirKemPk),
+              None, ~kemSS, theirKemPk,
               prefix(hkdf(hkdf(hkdf(z, rootKey), ~kemSS),
                           <$Me, pk(~idKey), $Them, theirIdPk>)),
               suffix(hkdf(hkdf(hkdf(z, rootKey), ~kemSS),
@@ -3757,8 +3729,7 @@ rule (modulo E) PublicKeyRatchetNewSenderSomeNewKemSS[color=#b4d9ef]:
     KemKeyGen( ~id, $Me, $Them, maybeMyNewKemPk ),
     NewKemSS( ~id, $Me, $Them, ~kemSS, theirKemPk ),
     PublicKeyRatchetNewSender( ~id, (%i%+%1), $Me, $Them,
-                               hkdf(hkdf(hkdf(z, rootKey), ~kemSS),
-                                    <$Me, pk(~idKey), $Them, theirIdPk>)
+                               hkdf(hkdf(hkdf(z, rootKey), ~kemSS), <$Me, pk(~idKey), $Them, theirIdPk>)
     )
     ]->
      [
@@ -4666,8 +4637,7 @@ rule (modulo E) PublicKeyRatchetNewSenderNoNewKemSS[color=#b4d9ef]:
    [
    Fr( ~ecdhSk ), Fr( ~msg ), !IdentityKey( $Me, ~idKey ),
    Session( ~id, %i, 'R', $Me, discard0, ~oldKemSk, $Them, theirIdPk,
-            theirEcdhPk, maybeTheirKemPk, None, kemSS, encapPk, rootKey,
-            discard1
+            theirEcdhPk, maybeTheirKemPk, None, kemSS, encapPk, rootKey, discard1
    ),
    NewKemKey( $Me, $Them, maybeNewKemSk, maybeMyNewKemPk )
    ]
@@ -4682,6 +4652,8 @@ rule (modulo E) PublicKeyRatchetNewSenderNoNewKemSS[color=#b4d9ef]:
   PKRatchet( ), ToSender( ),
   MessageSent( ~id, (%i%+%1), $Me, $Them, ~msg ),
   SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk,
+                  prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
+                              <$Me, pk(~idKey), $Them, theirIdPk>)),
                   suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
                               <$Me, pk(~idKey), $Them, theirIdPk>)),
                   hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
@@ -4689,8 +4661,8 @@ rule (modulo E) PublicKeyRatchetNewSenderNoNewKemSS[color=#b4d9ef]:
                        'msg_key')
   ),
   KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, theirEcdhPk^~ecdhSk,
-            default(maybeMyNewKemPk, pqpk(~oldKemSk)), maybeTheirKemPk, None,
-            kemSS, encapPk,
+            default(maybeMyNewKemPk, pqpk(~oldKemSk)), maybeTheirKemPk, None, kemSS,
+            encapPk,
             prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
                         <$Me, pk(~idKey), $Them, theirIdPk>)),
             suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
@@ -4717,8 +4689,7 @@ rule (modulo E) PublicKeyRatchetNewSenderNoNewKemSS[color=#b4d9ef]:
                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
                                      <$Me, pk(~idKey), $Them, theirIdPk>)),
                          'msg_key')),
-               hkdf(hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey),
-                                          '0'),
+               hkdf(hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
                                      <$Me, pk(~idKey), $Them, theirIdPk>)),
                          'msg_key'),
                     'msg_key_ind'),
@@ -4726,8 +4697,7 @@ rule (modulo E) PublicKeyRatchetNewSenderNoNewKemSS[color=#b4d9ef]:
                maybeMyNewKemPk, None, None>,
               ~idKey),
          'g'^~ecdhSk, (%i%+%1),
-         hkdf(hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey),
-                                    '0'),
+         hkdf(hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
                                <$Me, pk(~idKey), $Them, theirIdPk>)),
                    'msg_key'),
               'msg_key_ind'),
@@ -4764,8 +4734,7 @@ rule (modulo E) PublicKeyRatchetNewSenderNoNewKemSS[color=#b4d9ef]:
      [
      Fr( ~ecdhSk ), Fr( ~msg ), !IdentityKey( $Me, ~idKey ),
      Session( ~id, %i, 'R', $Me, discard0, ~oldKemSk, $Them, theirIdPk,
-              theirEcdhPk, maybeTheirKemPk, None, kemSS, encapPk, rootKey,
-              discard1
+              theirEcdhPk, maybeTheirKemPk, None, kemSS, encapPk, rootKey, discard1
      ),
      NewKemKey( $Me, $Them, maybeNewKemSk, maybeMyNewKemPk )
      ]
@@ -4779,14 +4748,16 @@ rule (modulo E) PublicKeyRatchetNewSenderNoNewKemSS[color=#b4d9ef]:
     PKRatchet( ), ToSender( ),
     MessageSent( ~id, (%i%+%1), $Me, $Them, ~msg ),
     SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk,
+                    prefix(hkdf(hkdf(hkdf(z, rootKey), '0'),
+                                <$Me, pk(~idKey), $Them, theirIdPk>)),
                     suffix(hkdf(hkdf(hkdf(z, rootKey), '0'),
                                 <$Me, pk(~idKey), $Them, theirIdPk>)),
                     hkdf(suffix(hkdf(hkdf(hkdf(z, rootKey), '0'),
                                      <$Me, pk(~idKey), $Them, theirIdPk>)),
                          'msg_key')
     ),
-    KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z, z.2,
-              maybeTheirKemPk, None, kemSS, encapPk,
+    KeysUsed( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z, z.2, maybeTheirKemPk,
+              None, kemSS, encapPk,
               prefix(hkdf(hkdf(hkdf(z, rootKey), '0'),
                           <$Me, pk(~idKey), $Them, theirIdPk>)),
               suffix(hkdf(hkdf(hkdf(z, rootKey), '0'),
@@ -4798,8 +4769,7 @@ rule (modulo E) PublicKeyRatchetNewSenderNoNewKemSS[color=#b4d9ef]:
     ECDHKeyGen( ~id, $Me, $Them, 'g'^~ecdhSk ),
     KemKeyGen( ~id, $Me, $Them, maybeMyNewKemPk ),
     PublicKeyRatchetNewSender( ~id, (%i%+%1), $Me, $Them,
-                               hkdf(hkdf(hkdf(z, rootKey), '0'),
-                                    <$Me, pk(~idKey), $Them, theirIdPk>)
+                               hkdf(hkdf(hkdf(z, rootKey), '0'), <$Me, pk(~idKey), $Them, theirIdPk>)
     )
     ]->
      [
@@ -5706,34 +5676,31 @@ rule (modulo E) PublicKeyRatchetNewSenderNoNewKemSS[color=#b4d9ef]:
 rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
    [
    !IdentityKey( $Me, ~idKey ),
-   Session( ~id, %i, 'S', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
-            discard1, maybeTheirKemPk, None, kemSS, encapPk, rootKey, discard2
+   Session( ~id, %i, 'S', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk, discard1,
+            maybeTheirKemPk, None, kemSS, encapPk, rootKey, discard2
    ),
-   In( <ciphertext, signature, theirEcdhPk, (%i%+%1),
-        msgKeyIndicator, maybeTheirNewKemPk, None, None>
+   In( <ciphertext, signature, theirEcdhPk, (%i%+%1), msgKeyIndicator,
+        maybeTheirNewKemPk, None, None>
    )
    ]
   --[
-  PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ),
-  Neq( theirEcdhPk, 'g' ),
+  PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ), Neq( theirEcdhPk, 'g' ),
   Eq( verify(signature,
              <'msg_sig', ciphertext, msgKeyIndicator, theirEcdhPk, (%i%+%1),
-              <$Them, theirIdPk, $Me, pk(~idKey)>, maybeTheirNewKemPk, None, None
-             >,
+              <$Them, theirIdPk, $Me, pk(~idKey)>, maybeTheirNewKemPk, None, None>,
              theirIdPk),
       true
   ),
   Eq( msgKeyIndicator,
-      hkdf(hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey),
-                                 '0'),
+      hkdf(hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
                             <$Them, theirIdPk, $Me, pk(~idKey)>)),
                 'msg_key'),
            'msg_key_ind')
   ),
   SessionInfo( ~id, (%i%+%1), $Me, $Them ),
   PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk,
-                    theirEcdhPk^~ecdhSk, pqpk(~kemSk), maybeTheirKemPk,
-                    maybeTheirNewKemPk, kemSS, encapPk,
+                    theirEcdhPk^~ecdhSk, pqpk(~kemSk), maybeTheirKemPk, maybeTheirNewKemPk,
+                    kemSS, encapPk,
                     prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
                                 <$Them, theirIdPk, $Me, pk(~idKey)>))
   ),
@@ -5746,6 +5713,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
                              'msg_key'))
   ),
   SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk,
+                  prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
+                              <$Them, theirIdPk, $Me, pk(~idKey)>)),
                   suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
                               <$Them, theirIdPk, $Me, pk(~idKey)>)),
                   hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
@@ -5768,9 +5737,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
   )
   ]->
    [
-   Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them,
-            theirIdPk, theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS,
-            encapPk,
+   Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
+            theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk,
             prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
                         <$Them, theirIdPk, $Me, pk(~idKey)>)),
             hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), '0'),
@@ -5797,16 +5765,16 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
   rule (modulo AC) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
      [
      !IdentityKey( $Me, ~idKey ),
-     Session( ~id, %i, 'S', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
-              discard1, maybeTheirKemPk, None, kemSS, encapPk, rootKey, discard2
+     Session( ~id, %i, 'S', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk, discard1,
+              maybeTheirKemPk, None, kemSS, encapPk, rootKey, discard2
      ),
-     In( <ciphertext, signature, theirEcdhPk, (%i%+%1),
-          msgKeyIndicator, maybeTheirNewKemPk, None, None>
+     In( <ciphertext, signature, theirEcdhPk, (%i%+%1), msgKeyIndicator,
+          maybeTheirNewKemPk, None, None>
      )
      ]
     --[
-    PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ),
-    Neq( theirEcdhPk, 'g' ), Eq( z.1, true ),
+    PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ), Neq( theirEcdhPk, 'g' ),
+    Eq( z.1, true ),
     Eq( msgKeyIndicator,
         hkdf(hkdf(suffix(hkdf(hkdf(hkdf(z, rootKey), '0'),
                               <$Them, theirIdPk, $Me, pk(~idKey)>)),
@@ -5814,8 +5782,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
              'msg_key_ind')
     ),
     SessionInfo( ~id, (%i%+%1), $Me, $Them ),
-    PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z,
-                      pqpk(~kemSk), maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk,
+    PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z, pqpk(~kemSk),
+                      maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk,
                       prefix(hkdf(hkdf(hkdf(z, rootKey), '0'),
                                   <$Them, theirIdPk, $Me, pk(~idKey)>))
     ),
@@ -5823,6 +5791,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
     NewKemPublicKey( ~id, $Me, $Them, maybeTheirNewKemPk ),
     MessageReceived( ~id, (%i%+%1), $Them, $Me, z.2 ),
     SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, kemSS, encapPk,
+                    prefix(hkdf(hkdf(hkdf(z, rootKey), '0'),
+                                <$Them, theirIdPk, $Me, pk(~idKey)>)),
                     suffix(hkdf(hkdf(hkdf(z, rootKey), '0'),
                                 <$Them, theirIdPk, $Me, pk(~idKey)>)),
                     hkdf(suffix(hkdf(hkdf(hkdf(z, rootKey), '0'),
@@ -5840,14 +5810,12 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
                    'msg_key')
     ),
     PublicKeyRatchetNewReceiver( ~id, (%i%+%1), $Them, $Me,
-                                 hkdf(hkdf(hkdf(z, rootKey), '0'),
-                                      <$Them, theirIdPk, $Me, pk(~idKey)>)
+                                 hkdf(hkdf(hkdf(z, rootKey), '0'), <$Them, theirIdPk, $Me, pk(~idKey)>)
     )
     ]->
      [
-     Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them,
-              theirIdPk, theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS,
-              encapPk,
+     Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
+              theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, kemSS, encapPk,
               prefix(hkdf(hkdf(hkdf(z, rootKey), '0'),
                           <$Them, theirIdPk, $Me, pk(~idKey)>)),
               hkdf(suffix(hkdf(hkdf(hkdf(z, rootKey), '0'),
@@ -5897,8 +5865,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
                         maybeTheirNewKemPk.62, None, None>,
                        theirIdPk.67)
         z.2   = sdec(ciphertext.56,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.66^~ecdhSk.52, rootKey.64),
-                                           '0'),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.66^~ecdhSk.52, rootKey.64), '0'),
                                       <$Them.51, theirIdPk.67, $Me.50, pk(~idKey.54)>)),
                           'msg_key'))
 
@@ -5923,9 +5890,9 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         z     = DH_neutral
         %i    = %i.68
         z.1   = verify(signature.65,
-                       <'msg_sig', ciphertext.56, msgKeyIndicator.63, DH_neutral,
-                        (%i.68%+%1), <$Them.51, theirIdPk.67, $Me.50, pk(~idKey.54)>,
-                        maybeTheirNewKemPk.62, None, None>,
+                       <'msg_sig', ciphertext.56, msgKeyIndicator.63, DH_neutral, (%i.68%+%1),
+                        <$Them.51, theirIdPk.67, $Me.50, pk(~idKey.54)>, maybeTheirNewKemPk.62,
+                        None, None>,
                        theirIdPk.67)
         z.2   = sdec(ciphertext.56,
                      hkdf(suffix(hkdf(hkdf(hkdf(DH_neutral, rootKey.64), '0'),
@@ -5955,9 +5922,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         z     = z.74
         %i    = %i.71
         z.1   = verify(signature.68,
-                       <'msg_sig', ciphertext.59, msgKeyIndicator.66,
-                        z.74^inv(~ecdhSk.55), (%i.71%+%1),
-                        <$Them.54, theirIdPk.70, $Me.53, pk(~idKey.57)>,
+                       <'msg_sig', ciphertext.59, msgKeyIndicator.66, z.74^inv(~ecdhSk.55),
+                        (%i.71%+%1), <$Them.54, theirIdPk.70, $Me.53, pk(~idKey.57)>,
                         maybeTheirNewKemPk.65, None, None>,
                        theirIdPk.70)
         z.2   = sdec(ciphertext.59,
@@ -5997,8 +5963,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
                                               <$Them.62, theirIdPk.78, $Me.61, pk(~idKey.65)>)),
                                   'msg_key')),
                         msgKeyIndicator.74, z.82^inv(~ecdhSk.63), (%i.79%+%1),
-                        <$Them.62, theirIdPk.78, $Me.61, pk(~idKey.65)>,
-                        maybeTheirNewKemPk.73, None, None>,
+                        <$Them.62, theirIdPk.78, $Me.61, pk(~idKey.65)>, maybeTheirNewKemPk.73,
+                        None, None>,
                        theirIdPk.78)
         z.2   = z.90
 
@@ -6010,8 +5976,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
               = ~idKey.65
         ciphertext
               = senc(z.90,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.77^~ecdhSk.63, rootKey.75),
-                                           '0'),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.77^~ecdhSk.63, rootKey.75), '0'),
                                       <$Them.62, theirIdPk.78, $Me.61, pk(~idKey.65)>)),
                           'msg_key'))
         maybeTheirNewKemPk
@@ -6031,13 +5996,12 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         z.1   = verify(signature.76,
                        <'msg_sig',
                         senc(z.90,
-                             hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.77^~ecdhSk.63, rootKey.75),
-                                                   '0'),
+                             hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.77^~ecdhSk.63, rootKey.75), '0'),
                                               <$Them.62, theirIdPk.78, $Me.61, pk(~idKey.65)>)),
                                   'msg_key')),
                         msgKeyIndicator.74, theirEcdhPk.77, (%i.79%+%1),
-                        <$Them.62, theirIdPk.78, $Me.61, pk(~idKey.65)>,
-                        maybeTheirNewKemPk.73, None, None>,
+                        <$Them.62, theirIdPk.78, $Me.61, pk(~idKey.65)>, maybeTheirNewKemPk.73,
+                        None, None>,
                        theirIdPk.78)
         z.2   = z.90
 
@@ -6071,8 +6035,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
                                               <$Them.62, theirIdPk.78, $Me.61, pk(~idKey.65)>)),
                                   'msg_key')),
                         msgKeyIndicator.74, DH_neutral, (%i.79%+%1),
-                        <$Them.62, theirIdPk.78, $Me.61, pk(~idKey.65)>,
-                        maybeTheirNewKemPk.73, None, None>,
+                        <$Them.62, theirIdPk.78, $Me.61, pk(~idKey.65)>, maybeTheirNewKemPk.73,
+                        None, None>,
                        theirIdPk.78)
         z.2   = z.90
 
@@ -6104,8 +6068,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
                         maybeTheirNewKemPk.357, None, None>,
                        theirIdPk.362)
         z.2   = sdec(ciphertext.351,
-                     hkdf(suffix(hkdf(hkdf(hkdf(x.687^(~ecdhSk.347*x.688), rootKey.359),
-                                           '0'),
+                     hkdf(suffix(hkdf(hkdf(hkdf(x.687^(~ecdhSk.347*x.688), rootKey.359), '0'),
                                       <$Them.346, theirIdPk.362, $Me.345, pk(~idKey.349)>)),
                           'msg_key'))
 
@@ -6191,8 +6154,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
               = ~idKey.356
         ciphertext
               = senc(z.381,
-                     hkdf(suffix(hkdf(hkdf(hkdf(x.701^(~ecdhSk.354*x.702), rootKey.366),
-                                           '0'),
+                     hkdf(suffix(hkdf(hkdf(hkdf(x.701^(~ecdhSk.354*x.702), rootKey.366), '0'),
                                       <$Them.353, theirIdPk.369, $Me.352, pk(~idKey.356)>)),
                           'msg_key'))
         maybeTheirNewKemPk
@@ -6212,8 +6174,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         z.1   = verify(signature.367,
                        <'msg_sig',
                         senc(z.381,
-                             hkdf(suffix(hkdf(hkdf(hkdf(x.701^(~ecdhSk.354*x.702), rootKey.366),
-                                                   '0'),
+                             hkdf(suffix(hkdf(hkdf(hkdf(x.701^(~ecdhSk.354*x.702), rootKey.366), '0'),
                                               <$Them.353, theirIdPk.369, $Me.352, pk(~idKey.356)>)),
                                   'msg_key')),
                         msgKeyIndicator.365, x.701^x.702, (%i.370%+%1),
@@ -6244,8 +6205,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
                                             <$Them.353, pk(x.702), $Me.352, pk(~idKey.356)>)),
                                 'msg_key')),
                       msgKeyIndicator.365, DH_neutral, (%i.370%+%1),
-                      <$Them.353, pk(x.702), $Me.352, pk(~idKey.356)>,
-                      maybeTheirNewKemPk.364, None, None>,
+                      <$Them.353, pk(x.702), $Me.352, pk(~idKey.356)>, maybeTheirNewKemPk.364,
+                      None, None>,
                      x.702)
         theirEcdhPk
               = DH_neutral
@@ -6280,8 +6241,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
                                             <$Them.354, pk(x.704), $Me.353, pk(~idKey.357)>)),
                                 'msg_key')),
                       msgKeyIndicator.366, z.374^inv(~ecdhSk.355), (%i.371%+%1),
-                      <$Them.354, pk(x.704), $Me.353, pk(~idKey.357)>,
-                      maybeTheirNewKemPk.365, None, None>,
+                      <$Them.354, pk(x.704), $Me.353, pk(~idKey.357)>, maybeTheirNewKemPk.365,
+                      None, None>,
                      x.704)
         theirEcdhPk
               = z.374^inv(~ecdhSk.355)
@@ -6300,8 +6261,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
               = ~idKey.357
         ciphertext
               = senc(z.382,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.369^~ecdhSk.355,
-                                                rootKey.367),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.369^~ecdhSk.355, rootKey.367),
                                            '0'),
                                       <$Them.354, pk(x.704), $Me.353, pk(~idKey.357)>)),
                           'msg_key'))
@@ -6314,14 +6274,13 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig',
                       senc(z.382,
-                           hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.369^~ecdhSk.355,
-                                                      rootKey.367),
+                           hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.369^~ecdhSk.355, rootKey.367),
                                                  '0'),
                                             <$Them.354, pk(x.704), $Me.353, pk(~idKey.357)>)),
                                 'msg_key')),
                       msgKeyIndicator.366, theirEcdhPk.369, (%i.371%+%1),
-                      <$Them.354, pk(x.704), $Me.353, pk(~idKey.357)>,
-                      maybeTheirNewKemPk.365, None, None>,
+                      <$Them.354, pk(x.704), $Me.353, pk(~idKey.357)>, maybeTheirNewKemPk.365,
+                      None, None>,
                      x.704)
         theirEcdhPk
               = theirEcdhPk.369
@@ -6340,8 +6299,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
               = ~idKey.357
         ciphertext
               = senc(z.382,
-                     hkdf(suffix(hkdf(hkdf(hkdf(x.702^(x.703*inv(x.704)), rootKey.367),
-                                           '0'),
+                     hkdf(suffix(hkdf(hkdf(hkdf(x.702^(x.703*inv(x.704)), rootKey.367), '0'),
                                       <$Them.354, theirIdPk.370, $Me.353, pk(~idKey.357)>)),
                           'msg_key'))
         maybeTheirNewKemPk
@@ -6361,8 +6319,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         z.1   = verify(signature.368,
                        <'msg_sig',
                         senc(z.382,
-                             hkdf(suffix(hkdf(hkdf(hkdf(x.702^(x.703*inv(x.704)), rootKey.367),
-                                                   '0'),
+                             hkdf(suffix(hkdf(hkdf(hkdf(x.702^(x.703*inv(x.704)), rootKey.367), '0'),
                                               <$Them.354, theirIdPk.370, $Me.353, pk(~idKey.357)>)),
                                   'msg_key')),
                         msgKeyIndicator.366, x.702^(x.703*inv((~ecdhSk.355*x.704))),
@@ -6395,8 +6352,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
                                             <$Them.355, pk(x.706), $Me.354, pk(~idKey.358)>)),
                                 'msg_key')),
                       msgKeyIndicator.367, x.703^(x.704*inv(~ecdhSk.356)), (%i.372%+%1),
-                      <$Them.355, pk(x.706), $Me.354, pk(~idKey.358)>,
-                      maybeTheirNewKemPk.366, None, None>,
+                      <$Them.355, pk(x.706), $Me.354, pk(~idKey.358)>, maybeTheirNewKemPk.366,
+                      None, None>,
                      x.706)
         theirEcdhPk
               = x.703^(x.704*inv(~ecdhSk.356))
@@ -6431,8 +6388,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
                                             <$Them.355, pk(x.706), $Me.354, pk(~idKey.358)>)),
                                 'msg_key')),
                       msgKeyIndicator.367, x.703^inv((~ecdhSk.356*x.704)), (%i.372%+%1),
-                      <$Them.355, pk(x.706), $Me.354, pk(~idKey.358)>,
-                      maybeTheirNewKemPk.366, None, None>,
+                      <$Them.355, pk(x.706), $Me.354, pk(~idKey.358)>, maybeTheirNewKemPk.366,
+                      None, None>,
                      x.706)
         theirEcdhPk
               = x.703^inv((~ecdhSk.356*x.704))
@@ -6451,8 +6408,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
               = ~idKey.358
         ciphertext
               = senc(z.383,
-                     hkdf(suffix(hkdf(hkdf(hkdf(x.703^(~ecdhSk.356*x.704), rootKey.368),
-                                           '0'),
+                     hkdf(suffix(hkdf(hkdf(hkdf(x.703^(~ecdhSk.356*x.704), rootKey.368), '0'),
                                       <$Them.355, pk(x.706), $Me.354, pk(~idKey.358)>)),
                           'msg_key'))
         maybeTheirNewKemPk
@@ -6464,13 +6420,12 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig',
                       senc(z.383,
-                           hkdf(suffix(hkdf(hkdf(hkdf(x.703^(~ecdhSk.356*x.704), rootKey.368),
-                                                 '0'),
+                           hkdf(suffix(hkdf(hkdf(hkdf(x.703^(~ecdhSk.356*x.704), rootKey.368), '0'),
                                             <$Them.355, pk(x.706), $Me.354, pk(~idKey.358)>)),
                                 'msg_key')),
                       msgKeyIndicator.367, x.703^x.704, (%i.372%+%1),
-                      <$Them.355, pk(x.706), $Me.354, pk(~idKey.358)>,
-                      maybeTheirNewKemPk.366, None, None>,
+                      <$Them.355, pk(x.706), $Me.354, pk(~idKey.358)>, maybeTheirNewKemPk.366,
+                      None, None>,
                      x.706)
         theirEcdhPk
               = x.703^x.704
@@ -6489,8 +6444,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
               = ~idKey.359
         ciphertext
               = senc(z.384,
-                     hkdf(suffix(hkdf(hkdf(hkdf(x.704^(x.705*inv(x.706)), rootKey.369),
-                                           '0'),
+                     hkdf(suffix(hkdf(hkdf(hkdf(x.704^(x.705*inv(x.706)), rootKey.369), '0'),
                                       <$Them.356, pk(x.708), $Me.355, pk(~idKey.359)>)),
                           'msg_key'))
         maybeTheirNewKemPk
@@ -6502,8 +6456,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig',
                       senc(z.384,
-                           hkdf(suffix(hkdf(hkdf(hkdf(x.704^(x.705*inv(x.706)), rootKey.369),
-                                                 '0'),
+                           hkdf(suffix(hkdf(hkdf(hkdf(x.704^(x.705*inv(x.706)), rootKey.369), '0'),
                                             <$Them.356, pk(x.708), $Me.355, pk(~idKey.359)>)),
                                 'msg_key')),
                       msgKeyIndicator.368, x.704^(x.705*inv((~ecdhSk.357*x.706))),
@@ -6614,8 +6567,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
                         maybeTheirNewKemPk.372, None, None>,
                        theirIdPk.377)
         z.2   = sdec(ciphertext.366,
-                     hkdf(suffix(hkdf(hkdf(hkdf(x.716^(x.717*inv(x.718)), rootKey.374),
-                                           '0'),
+                     hkdf(suffix(hkdf(hkdf(hkdf(x.716^(x.717*inv(x.718)), rootKey.374), '0'),
                                       <$Them.361, theirIdPk.377, $Me.360, pk(~idKey.364)>)),
                           'msg_key'))
 
@@ -6632,9 +6584,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         rootKey
               = rootKey.374
         signature
-              = sign(<'msg_sig', ciphertext.366, msgKeyIndicator.373,
-                      DH_neutral, (%i.378%+%1),
-                      <$Them.361, pk(x.718), $Me.360, pk(~idKey.364)>,
+              = sign(<'msg_sig', ciphertext.366, msgKeyIndicator.373, DH_neutral,
+                      (%i.378%+%1), <$Them.361, pk(x.718), $Me.360, pk(~idKey.364)>,
                       maybeTheirNewKemPk.372, None, None>,
                      x.718)
         theirEcdhPk
@@ -6664,9 +6615,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         rootKey
               = rootKey.375
         signature
-              = sign(<'msg_sig', ciphertext.367, msgKeyIndicator.374,
-                      theirEcdhPk.377, (%i.379%+%1),
-                      <$Them.362, pk(x.720), $Me.361, pk(~idKey.365)>,
+              = sign(<'msg_sig', ciphertext.367, msgKeyIndicator.374, theirEcdhPk.377,
+                      (%i.379%+%1), <$Them.362, pk(x.720), $Me.361, pk(~idKey.365)>,
                       maybeTheirNewKemPk.373, None, None>,
                      x.720)
         theirEcdhPk
@@ -6677,8 +6627,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         %i    = %i.379
         z.1   = true
         z.2   = sdec(ciphertext.367,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.377^~ecdhSk.363,
-                                                rootKey.375),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.377^~ecdhSk.363, rootKey.375),
                                            '0'),
                                       <$Them.362, pk(x.720), $Me.361, pk(~idKey.365)>)),
                           'msg_key'))
@@ -6700,8 +6649,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.367, msgKeyIndicator.374,
                       z.382^inv(~ecdhSk.363), (%i.379%+%1),
-                      <$Them.362, pk(x.720), $Me.361, pk(~idKey.365)>,
-                      maybeTheirNewKemPk.373, None, None>,
+                      <$Them.362, pk(x.720), $Me.361, pk(~idKey.365)>, maybeTheirNewKemPk.373,
+                      None, None>,
                      x.720)
         theirEcdhPk
               = z.382^inv(~ecdhSk.363)
@@ -6730,9 +6679,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         rootKey
               = rootKey.376
         signature
-              = sign(<'msg_sig', ciphertext.368, msgKeyIndicator.375,
-                      x.719^x.720, (%i.380%+%1),
-                      <$Them.363, pk(x.722), $Me.362, pk(~idKey.366)>,
+              = sign(<'msg_sig', ciphertext.368, msgKeyIndicator.375, x.719^x.720,
+                      (%i.380%+%1), <$Them.363, pk(x.722), $Me.362, pk(~idKey.366)>,
                       maybeTheirNewKemPk.374, None, None>,
                      x.722)
         theirEcdhPk
@@ -6743,8 +6691,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         %i    = %i.380
         z.1   = true
         z.2   = sdec(ciphertext.368,
-                     hkdf(suffix(hkdf(hkdf(hkdf(x.719^(~ecdhSk.364*x.720), rootKey.376),
-                                           '0'),
+                     hkdf(suffix(hkdf(hkdf(hkdf(x.719^(~ecdhSk.364*x.720), rootKey.376), '0'),
                                       <$Them.363, pk(x.722), $Me.362, pk(~idKey.366)>)),
                           'msg_key'))
 
@@ -6765,8 +6712,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.368, msgKeyIndicator.375,
                       x.719^inv((~ecdhSk.364*x.720)), (%i.380%+%1),
-                      <$Them.363, pk(x.722), $Me.362, pk(~idKey.366)>,
-                      maybeTheirNewKemPk.374, None, None>,
+                      <$Them.363, pk(x.722), $Me.362, pk(~idKey.366)>, maybeTheirNewKemPk.374,
+                      None, None>,
                      x.722)
         theirEcdhPk
               = x.719^inv((~ecdhSk.364*x.720))
@@ -6797,8 +6744,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.368, msgKeyIndicator.375,
                       x.719^(x.720*inv(~ecdhSk.364)), (%i.380%+%1),
-                      <$Them.363, pk(x.722), $Me.362, pk(~idKey.366)>,
-                      maybeTheirNewKemPk.374, None, None>,
+                      <$Them.363, pk(x.722), $Me.362, pk(~idKey.366)>, maybeTheirNewKemPk.374,
+                      None, None>,
                      x.722)
         theirEcdhPk
               = x.719^(x.720*inv(~ecdhSk.364))
@@ -6829,8 +6776,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.369, msgKeyIndicator.376,
                       x.720^(x.721*inv((~ecdhSk.365*x.722))), (%i.381%+%1),
-                      <$Them.364, pk(x.724), $Me.363, pk(~idKey.367)>,
-                      maybeTheirNewKemPk.375, None, None>,
+                      <$Them.364, pk(x.724), $Me.363, pk(~idKey.367)>, maybeTheirNewKemPk.375,
+                      None, None>,
                      x.724)
         theirEcdhPk
               = x.720^(x.721*inv((~ecdhSk.365*x.722)))
@@ -6840,8 +6787,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
         %i    = %i.381
         z.1   = true
         z.2   = sdec(ciphertext.369,
-                     hkdf(suffix(hkdf(hkdf(hkdf(x.720^(x.721*inv(x.722)), rootKey.377),
-                                           '0'),
+                     hkdf(suffix(hkdf(hkdf(hkdf(x.720^(x.721*inv(x.722)), rootKey.377), '0'),
                                       <$Them.364, pk(x.724), $Me.363, pk(~idKey.367)>)),
                           'msg_key'))
     // loop breaker: [1]
@@ -6850,21 +6796,20 @@ rule (modulo E) PublicKeyRatchetNewReceiverNoNewKemSS[color=#b4d9ef]:
 rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
    [
    !IdentityKey( $Me, ~idKey ),
-   Session( ~id, %i, 'S', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
-            discard1, maybeTheirKemPk, None, discard2, discard3, rootKey,
-            discard4
+   Session( ~id, %i, 'S', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk, discard1,
+            maybeTheirKemPk, None, discard2, discard3, rootKey, discard4
    ),
-   In( <ciphertext, signature, theirEcdhPk, (%i%+%1),
-        msgKeyIndicator, maybeTheirNewKemPk, Just(kemEncap), None>
+   In( <ciphertext, signature, theirEcdhPk, (%i%+%1), msgKeyIndicator,
+        maybeTheirNewKemPk, Just(kemEncap), None>
    )
    ]
   --[
-  PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ),
-  Neq( theirEcdhPk, 'g' ), Neq( decap(kemEncap, ~kemSk), '0' ),
+  PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ), Neq( theirEcdhPk, 'g' ),
+  Neq( decap(kemEncap, ~kemSk), '0' ),
   Eq( verify(signature,
              <'msg_sig', ciphertext, msgKeyIndicator, theirEcdhPk, (%i%+%1),
-              <$Them, theirIdPk, $Me, pk(~idKey)>, maybeTheirNewKemPk,
-              Just(kemEncap), None>,
+              <$Them, theirIdPk, $Me, pk(~idKey)>, maybeTheirNewKemPk, Just(kemEncap),
+              None>,
              theirIdPk),
       true
   ),
@@ -6877,8 +6822,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
   ),
   SessionInfo( ~id, (%i%+%1), $Me, $Them ),
   PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk,
-                    theirEcdhPk^~ecdhSk, pqpk(~kemSk), maybeTheirKemPk,
-                    maybeTheirNewKemPk, decap(kemEncap, ~kemSk), pqpk(~kemSk),
+                    theirEcdhPk^~ecdhSk, pqpk(~kemSk), maybeTheirKemPk, maybeTheirNewKemPk,
+                    decap(kemEncap, ~kemSk), pqpk(~kemSk),
                     prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey),
                                      decap(kemEncap, ~kemSk)),
                                 <$Them, theirIdPk, $Me, pk(~idKey)>))
@@ -6894,6 +6839,9 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
   ),
   SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, decap(kemEncap, ~kemSk),
                   pqpk(~kemSk),
+                  prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey),
+                                   decap(kemEncap, ~kemSk)),
+                              <$Them, theirIdPk, $Me, pk(~idKey)>)),
                   suffix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey),
                                    decap(kemEncap, ~kemSk)),
                               <$Them, theirIdPk, $Me, pk(~idKey)>)),
@@ -6917,16 +6865,14 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                  'msg_key')
   ),
   PublicKeyRatchetNewReceiver( ~id, (%i%+%1), $Them, $Me,
-                               hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey),
-                                         decap(kemEncap, ~kemSk)),
+                               hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey), decap(kemEncap, ~kemSk)),
                                     <$Them, theirIdPk, $Me, pk(~idKey)>)
   ),
-  DecapKemSS( ~id, $Me, $Them, decap(kemEncap, ~kemSk), pqpk(~kemSk)
-  )
+  DecapKemSS( ~id, $Me, $Them, decap(kemEncap, ~kemSk), pqpk(~kemSk) )
   ]->
    [
-   Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them,
-            theirIdPk, theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk,
+   Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
+            theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk,
             decap(kemEncap, ~kemSk), pqpk(~kemSk),
             prefix(hkdf(hkdf(hkdf(theirEcdhPk^~ecdhSk, rootKey),
                              decap(kemEncap, ~kemSk)),
@@ -6959,17 +6905,16 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
   rule (modulo AC) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
      [
      !IdentityKey( $Me, ~idKey ),
-     Session( ~id, %i, 'S', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
-              discard1, maybeTheirKemPk, None, discard2, discard3, rootKey,
-              discard4
+     Session( ~id, %i, 'S', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk, discard1,
+              maybeTheirKemPk, None, discard2, discard3, rootKey, discard4
      ),
-     In( <ciphertext, signature, theirEcdhPk, (%i%+%1),
-          msgKeyIndicator, maybeTheirNewKemPk, Just(kemEncap), None>
+     In( <ciphertext, signature, theirEcdhPk, (%i%+%1), msgKeyIndicator,
+          maybeTheirNewKemPk, Just(kemEncap), None>
      )
      ]
     --[
-    PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ),
-    Neq( theirEcdhPk, 'g' ), Neq( z, '0' ), Eq( z.2, true ),
+    PrePQAttack( ), Neq( theirEcdhPk, DH_neutral ), Neq( theirEcdhPk, 'g' ),
+    Neq( z, '0' ), Eq( z.2, true ),
     Eq( msgKeyIndicator,
         hkdf(hkdf(suffix(hkdf(hkdf(hkdf(z.1, rootKey), z),
                               <$Them, theirIdPk, $Me, pk(~idKey)>)),
@@ -6977,8 +6922,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
              'msg_key_ind')
     ),
     SessionInfo( ~id, (%i%+%1), $Me, $Them ),
-    PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z.1,
-                      pqpk(~kemSk), maybeTheirKemPk, maybeTheirNewKemPk, z, pqpk(~kemSk),
+    PublicKeyRatchet( theirIdPk, 'g'^~ecdhSk, theirEcdhPk, z.1, pqpk(~kemSk),
+                      maybeTheirKemPk, maybeTheirNewKemPk, z, pqpk(~kemSk),
                       prefix(hkdf(hkdf(hkdf(z.1, rootKey), z),
                                   <$Them, theirIdPk, $Me, pk(~idKey)>))
     ),
@@ -6986,6 +6931,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
     NewKemPublicKey( ~id, $Me, $Them, maybeTheirNewKemPk ),
     MessageReceived( ~id, (%i%+%1), $Them, $Me, z.3 ),
     SessionSecrets( 'g'^~ecdhSk, theirEcdhPk, z, pqpk(~kemSk),
+                    prefix(hkdf(hkdf(hkdf(z.1, rootKey), z),
+                                <$Them, theirIdPk, $Me, pk(~idKey)>)),
                     suffix(hkdf(hkdf(hkdf(z.1, rootKey), z),
                                 <$Them, theirIdPk, $Me, pk(~idKey)>)),
                     hkdf(suffix(hkdf(hkdf(hkdf(z.1, rootKey), z),
@@ -7003,15 +6950,13 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                    'msg_key')
     ),
     PublicKeyRatchetNewReceiver( ~id, (%i%+%1), $Them, $Me,
-                                 hkdf(hkdf(hkdf(z.1, rootKey), z),
-                                      <$Them, theirIdPk, $Me, pk(~idKey)>)
+                                 hkdf(hkdf(hkdf(z.1, rootKey), z), <$Them, theirIdPk, $Me, pk(~idKey)>)
     ),
     DecapKemSS( ~id, $Me, $Them, z, pqpk(~kemSk) )
     ]->
      [
-     Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them,
-              theirIdPk, theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, z,
-              pqpk(~kemSk),
+     Session( ~id, (%i%+%1), 'R', $Me, ~ecdhSk, ~kemSk, $Them, theirIdPk,
+              theirEcdhPk, maybeTheirKemPk, maybeTheirNewKemPk, z, pqpk(~kemSk),
               prefix(hkdf(hkdf(hkdf(z.1, rootKey), z),
                           <$Them, theirIdPk, $Me, pk(~idKey)>)),
               hkdf(suffix(hkdf(hkdf(hkdf(z.1, rootKey), z),
@@ -7097,9 +7042,9 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         %i    = %i.72
         z.1   = DH_neutral
         z.2   = verify(signature.69,
-                       <'msg_sig', ciphertext.59, msgKeyIndicator.67, DH_neutral,
-                        (%i.72%+%1), <$Them.54, theirIdPk.71, $Me.53, pk(~idKey.57)>,
-                        maybeTheirNewKemPk.66, Just(kemEncap.64), None>,
+                       <'msg_sig', ciphertext.59, msgKeyIndicator.67, DH_neutral, (%i.72%+%1),
+                        <$Them.54, theirIdPk.71, $Me.53, pk(~idKey.57)>, maybeTheirNewKemPk.66,
+                        Just(kemEncap.64), None>,
                        theirIdPk.71)
         z.3   = sdec(ciphertext.59,
                      hkdf(suffix(hkdf(hkdf(hkdf(DH_neutral, rootKey.68),
@@ -7140,8 +7085,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                         maybeTheirNewKemPk.69, Just(encap(z.78, pqpk(~kemSk.61))), None>,
                        theirIdPk.74)
         z.3   = sdec(ciphertext.62,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.73^~ecdhSk.58, rootKey.71),
-                                           z.78),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.73^~ecdhSk.58, rootKey.71), z.78),
                                       <$Them.57, theirIdPk.74, $Me.56, pk(~idKey.60)>)),
                           'msg_key'))
 
@@ -7171,9 +7115,9 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         %i    = %i.75
         z.1   = DH_neutral
         z.2   = verify(signature.72,
-                       <'msg_sig', ciphertext.62, msgKeyIndicator.70, DH_neutral,
-                        (%i.75%+%1), <$Them.57, theirIdPk.74, $Me.56, pk(~idKey.60)>,
-                        maybeTheirNewKemPk.69, Just(encap(z.78, pqpk(~kemSk.61))), None>,
+                       <'msg_sig', ciphertext.62, msgKeyIndicator.70, DH_neutral, (%i.75%+%1),
+                        <$Them.57, theirIdPk.74, $Me.56, pk(~idKey.60)>, maybeTheirNewKemPk.69,
+                        Just(encap(z.78, pqpk(~kemSk.61))), None>,
                        theirIdPk.74)
         z.3   = sdec(ciphertext.62,
                      hkdf(suffix(hkdf(hkdf(hkdf(DH_neutral, rootKey.71), z.78),
@@ -7208,9 +7152,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         %i    = %i.76
         z.1   = z.80
         z.2   = verify(signature.73,
-                       <'msg_sig', ciphertext.63, msgKeyIndicator.71,
-                        z.80^inv(~ecdhSk.59), (%i.76%+%1),
-                        <$Them.58, theirIdPk.75, $Me.57, pk(~idKey.61)>,
+                       <'msg_sig', ciphertext.63, msgKeyIndicator.71, z.80^inv(~ecdhSk.59),
+                        (%i.76%+%1), <$Them.58, theirIdPk.75, $Me.57, pk(~idKey.61)>,
                         maybeTheirNewKemPk.70, Just(kemEncap.68), None>,
                        theirIdPk.75)
         z.3   = sdec(ciphertext.63,
@@ -7247,9 +7190,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         %i    = %i.76
         z.1   = z.80
         z.2   = verify(signature.73,
-                       <'msg_sig', ciphertext.63, msgKeyIndicator.71,
-                        z.80^inv(~ecdhSk.59), (%i.76%+%1),
-                        <$Them.58, theirIdPk.75, $Me.57, pk(~idKey.61)>,
+                       <'msg_sig', ciphertext.63, msgKeyIndicator.71, z.80^inv(~ecdhSk.59),
+                        (%i.76%+%1), <$Them.58, theirIdPk.75, $Me.57, pk(~idKey.61)>,
                         maybeTheirNewKemPk.70, Just(encap(z.79, pqpk(~kemSk.62))), None>,
                        theirIdPk.75)
         z.3   = sdec(ciphertext.63,
@@ -7294,8 +7236,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                               <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>)),
                                   'msg_key')),
                         msgKeyIndicator.79, z.88^inv(~ecdhSk.67), (%i.84%+%1),
-                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>,
-                        maybeTheirNewKemPk.78, Just(encap(z.87, pqpk(~kemSk.70))), None>,
+                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>, maybeTheirNewKemPk.78,
+                        Just(encap(z.87, pqpk(~kemSk.70))), None>,
                        theirIdPk.83)
         z.3   = z.96
 
@@ -7338,8 +7280,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                               <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>)),
                                   'msg_key')),
                         msgKeyIndicator.79, z.88^inv(~ecdhSk.67), (%i.84%+%1),
-                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>,
-                        maybeTheirNewKemPk.78, Just(kemEncap.76), None>,
+                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>, maybeTheirNewKemPk.78,
+                        Just(kemEncap.76), None>,
                        theirIdPk.83)
         z.3   = z.96
 
@@ -7353,8 +7295,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
               = ~kemSk.70
         ciphertext
               = senc(z.96,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.82^~ecdhSk.67, rootKey.80),
-                                           z.87),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.82^~ecdhSk.67, rootKey.80), z.87),
                                       <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>)),
                           'msg_key'))
         kemEncap
@@ -7377,13 +7318,12 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         z.2   = verify(signature.81,
                        <'msg_sig',
                         senc(z.96,
-                             hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.82^~ecdhSk.67, rootKey.80),
-                                                   z.87),
+                             hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.82^~ecdhSk.67, rootKey.80), z.87),
                                               <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>)),
                                   'msg_key')),
                         msgKeyIndicator.79, theirEcdhPk.82, (%i.84%+%1),
-                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>,
-                        maybeTheirNewKemPk.78, Just(encap(z.87, pqpk(~kemSk.70))), None>,
+                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>, maybeTheirNewKemPk.78,
+                        Just(encap(z.87, pqpk(~kemSk.70))), None>,
                        theirIdPk.83)
         z.3   = z.96
 
@@ -7426,8 +7366,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                               <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>)),
                                   'msg_key')),
                         msgKeyIndicator.79, theirEcdhPk.82, (%i.84%+%1),
-                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>,
-                        maybeTheirNewKemPk.78, Just(kemEncap.76), None>,
+                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>, maybeTheirNewKemPk.78,
+                        Just(kemEncap.76), None>,
                        theirIdPk.83)
         z.3   = z.96
 
@@ -7466,8 +7406,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                               <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>)),
                                   'msg_key')),
                         msgKeyIndicator.79, DH_neutral, (%i.84%+%1),
-                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>,
-                        maybeTheirNewKemPk.78, Just(encap(z.87, pqpk(~kemSk.70))), None>,
+                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>, maybeTheirNewKemPk.78,
+                        Just(encap(z.87, pqpk(~kemSk.70))), None>,
                        theirIdPk.83)
         z.3   = z.96
 
@@ -7508,8 +7448,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                               <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>)),
                                   'msg_key')),
                         msgKeyIndicator.79, DH_neutral, (%i.84%+%1),
-                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>,
-                        maybeTheirNewKemPk.78, Just(kemEncap.76), None>,
+                        <$Them.66, theirIdPk.83, $Me.65, pk(~idKey.69)>, maybeTheirNewKemPk.78,
+                        Just(kemEncap.76), None>,
                        theirIdPk.83)
         z.3   = z.96
 
@@ -7589,8 +7529,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                   'msg_key')),
                         msgKeyIndicator.388, x.745^(x.746*inv(~ecdhSk.376)), (%i.393%+%1),
                         <$Them.375, theirIdPk.392, $Me.374, pk(~idKey.378)>,
-                        maybeTheirNewKemPk.387, Just(encap(z.396, pqpk(~kemSk.379))), None
-                       >,
+                        maybeTheirNewKemPk.387, Just(encap(z.396, pqpk(~kemSk.379))), None>,
                        theirIdPk.392)
         z.3   = z.405
 
@@ -7676,8 +7615,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                   'msg_key')),
                         msgKeyIndicator.388, x.745^inv((~ecdhSk.376*x.746)), (%i.393%+%1),
                         <$Them.375, theirIdPk.392, $Me.374, pk(~idKey.378)>,
-                        maybeTheirNewKemPk.387, Just(encap(z.396, pqpk(~kemSk.379))), None
-                       >,
+                        maybeTheirNewKemPk.387, Just(encap(z.396, pqpk(~kemSk.379))), None>,
                        theirIdPk.392)
         z.3   = z.405
 
@@ -7765,8 +7703,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                   'msg_key')),
                         msgKeyIndicator.388, x.745^x.746, (%i.393%+%1),
                         <$Them.375, theirIdPk.392, $Me.374, pk(~idKey.378)>,
-                        maybeTheirNewKemPk.387, Just(encap(z.396, pqpk(~kemSk.379))), None
-                       >,
+                        maybeTheirNewKemPk.387, Just(encap(z.396, pqpk(~kemSk.379))), None>,
                        theirIdPk.392)
         z.3   = z.405
 
@@ -7854,8 +7791,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                   'msg_key')),
                         msgKeyIndicator.389, x.746^(x.747*inv((~ecdhSk.377*x.748))),
                         (%i.394%+%1), <$Them.376, theirIdPk.393, $Me.375, pk(~idKey.379)>,
-                        maybeTheirNewKemPk.388, Just(encap(z.397, pqpk(~kemSk.380))), None
-                       >,
+                        maybeTheirNewKemPk.388, Just(encap(z.397, pqpk(~kemSk.380))), None>,
                        theirIdPk.393)
         z.3   = z.406
 
@@ -7929,9 +7865,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                             <$Them.376, pk(x.748), $Me.375, pk(~idKey.379)>)),
                                 'msg_key')),
                       msgKeyIndicator.389, DH_neutral, (%i.394%+%1),
-                      <$Them.376, pk(x.748), $Me.375, pk(~idKey.379)>,
-                      maybeTheirNewKemPk.388, Just(encap(z.397, pqpk(~kemSk.380))), None
-                     >,
+                      <$Them.376, pk(x.748), $Me.375, pk(~idKey.379)>, maybeTheirNewKemPk.388,
+                      Just(encap(z.397, pqpk(~kemSk.380))), None>,
                      x.748)
         theirEcdhPk
               = DH_neutral
@@ -7971,8 +7906,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                             <$Them.376, pk(x.748), $Me.375, pk(~idKey.379)>)),
                                 'msg_key')),
                       msgKeyIndicator.389, DH_neutral, (%i.394%+%1),
-                      <$Them.376, pk(x.748), $Me.375, pk(~idKey.379)>,
-                      maybeTheirNewKemPk.388, Just(kemEncap.386), None>,
+                      <$Them.376, pk(x.748), $Me.375, pk(~idKey.379)>, maybeTheirNewKemPk.388,
+                      Just(kemEncap.386), None>,
                      x.748)
         theirEcdhPk
               = DH_neutral
@@ -8012,9 +7947,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                             <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>)),
                                 'msg_key')),
                       msgKeyIndicator.390, z.399^inv(~ecdhSk.378), (%i.395%+%1),
-                      <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>,
-                      maybeTheirNewKemPk.389, Just(encap(z.398, pqpk(~kemSk.381))), None
-                     >,
+                      <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>, maybeTheirNewKemPk.389,
+                      Just(encap(z.398, pqpk(~kemSk.381))), None>,
                      x.750)
         theirEcdhPk
               = z.399^inv(~ecdhSk.378)
@@ -8056,8 +7990,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                             <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>)),
                                 'msg_key')),
                       msgKeyIndicator.390, z.399^inv(~ecdhSk.378), (%i.395%+%1),
-                      <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>,
-                      maybeTheirNewKemPk.389, Just(kemEncap.387), None>,
+                      <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>, maybeTheirNewKemPk.389,
+                      Just(kemEncap.387), None>,
                      x.750)
         theirEcdhPk
               = z.399^inv(~ecdhSk.378)
@@ -8079,8 +8013,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
               = ~kemSk.381
         ciphertext
               = senc(z.407,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.393^~ecdhSk.378,
-                                                rootKey.391),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.393^~ecdhSk.378, rootKey.391),
                                            z.398),
                                       <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>)),
                           'msg_key'))
@@ -8095,15 +8028,13 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig',
                       senc(z.407,
-                           hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.393^~ecdhSk.378,
-                                                      rootKey.391),
+                           hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.393^~ecdhSk.378, rootKey.391),
                                                  z.398),
                                             <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>)),
                                 'msg_key')),
                       msgKeyIndicator.390, theirEcdhPk.393, (%i.395%+%1),
-                      <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>,
-                      maybeTheirNewKemPk.389, Just(encap(z.398, pqpk(~kemSk.381))), None
-                     >,
+                      <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>, maybeTheirNewKemPk.389,
+                      Just(encap(z.398, pqpk(~kemSk.381))), None>,
                      x.750)
         theirEcdhPk
               = theirEcdhPk.393
@@ -8125,8 +8056,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
               = ~kemSk.381
         ciphertext
               = senc(z.407,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.393^~ecdhSk.378,
-                                                rootKey.391),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.393^~ecdhSk.378, rootKey.391),
                                            decap(kemEncap.387, ~kemSk.381)),
                                       <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>)),
                           'msg_key'))
@@ -8141,14 +8071,13 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig',
                       senc(z.407,
-                           hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.393^~ecdhSk.378,
-                                                      rootKey.391),
+                           hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.393^~ecdhSk.378, rootKey.391),
                                                  decap(kemEncap.387, ~kemSk.381)),
                                             <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>)),
                                 'msg_key')),
                       msgKeyIndicator.390, theirEcdhPk.393, (%i.395%+%1),
-                      <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>,
-                      maybeTheirNewKemPk.389, Just(kemEncap.387), None>,
+                      <$Them.377, pk(x.750), $Me.376, pk(~idKey.380)>, maybeTheirNewKemPk.389,
+                      Just(kemEncap.387), None>,
                      x.750)
         theirEcdhPk
               = theirEcdhPk.393
@@ -8188,9 +8117,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                             <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>)),
                                 'msg_key')),
                       msgKeyIndicator.391, x.748^(x.749*inv(~ecdhSk.379)), (%i.396%+%1),
-                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>,
-                      maybeTheirNewKemPk.390, Just(encap(z.399, pqpk(~kemSk.382))), None
-                     >,
+                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>, maybeTheirNewKemPk.390,
+                      Just(encap(z.399, pqpk(~kemSk.382))), None>,
                      x.752)
         theirEcdhPk
               = x.748^(x.749*inv(~ecdhSk.379))
@@ -8232,8 +8160,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                             <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>)),
                                 'msg_key')),
                       msgKeyIndicator.391, x.748^(x.749*inv(~ecdhSk.379)), (%i.396%+%1),
-                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>,
-                      maybeTheirNewKemPk.390, Just(kemEncap.388), None>,
+                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>, maybeTheirNewKemPk.390,
+                      Just(kemEncap.388), None>,
                      x.752)
         theirEcdhPk
               = x.748^(x.749*inv(~ecdhSk.379))
@@ -8273,9 +8201,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                             <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>)),
                                 'msg_key')),
                       msgKeyIndicator.391, x.748^inv((~ecdhSk.379*x.749)), (%i.396%+%1),
-                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>,
-                      maybeTheirNewKemPk.390, Just(encap(z.399, pqpk(~kemSk.382))), None
-                     >,
+                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>, maybeTheirNewKemPk.390,
+                      Just(encap(z.399, pqpk(~kemSk.382))), None>,
                      x.752)
         theirEcdhPk
               = x.748^inv((~ecdhSk.379*x.749))
@@ -8317,8 +8244,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                             <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>)),
                                 'msg_key')),
                       msgKeyIndicator.391, x.748^inv((~ecdhSk.379*x.749)), (%i.396%+%1),
-                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>,
-                      maybeTheirNewKemPk.390, Just(kemEncap.388), None>,
+                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>, maybeTheirNewKemPk.390,
+                      Just(kemEncap.388), None>,
                      x.752)
         theirEcdhPk
               = x.748^inv((~ecdhSk.379*x.749))
@@ -8360,9 +8287,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                             <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>)),
                                 'msg_key')),
                       msgKeyIndicator.391, x.748^x.749, (%i.396%+%1),
-                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>,
-                      maybeTheirNewKemPk.390, Just(encap(z.399, pqpk(~kemSk.382))), None
-                     >,
+                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>, maybeTheirNewKemPk.390,
+                      Just(encap(z.399, pqpk(~kemSk.382))), None>,
                      x.752)
         theirEcdhPk
               = x.748^x.749
@@ -8404,8 +8330,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                             <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>)),
                                 'msg_key')),
                       msgKeyIndicator.391, x.748^x.749, (%i.396%+%1),
-                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>,
-                      maybeTheirNewKemPk.390, Just(kemEncap.388), None>,
+                      <$Them.378, pk(x.752), $Me.377, pk(~idKey.381)>, maybeTheirNewKemPk.390,
+                      Just(kemEncap.388), None>,
                      x.752)
         theirEcdhPk
               = x.748^x.749
@@ -8448,8 +8374,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                                 'msg_key')),
                       msgKeyIndicator.392, x.749^(x.750*inv((~ecdhSk.380*x.751))),
                       (%i.397%+%1), <$Them.379, pk(x.754), $Me.378, pk(~idKey.382)>,
-                      maybeTheirNewKemPk.391, Just(encap(z.400, pqpk(~kemSk.383))), None
-                     >,
+                      maybeTheirNewKemPk.391, Just(encap(z.400, pqpk(~kemSk.383))), None>,
                      x.754)
         theirEcdhPk
               = x.749^(x.750*inv((~ecdhSk.380*x.751)))
@@ -8534,8 +8459,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         z.2   = verify(signature.395,
                        <'msg_sig', ciphertext.385, msgKeyIndicator.393, x.755^x.756,
                         (%i.398%+%1), <$Them.380, theirIdPk.397, $Me.379, pk(~idKey.383)>,
-                        maybeTheirNewKemPk.392, Just(encap(z.401, pqpk(~kemSk.384))), None
-                       >,
+                        maybeTheirNewKemPk.392, Just(encap(z.401, pqpk(~kemSk.384))), None>,
                        theirIdPk.397)
         z.3   = sdec(ciphertext.385,
                      hkdf(suffix(hkdf(hkdf(hkdf(x.755^(~ecdhSk.381*x.756), rootKey.394),
@@ -8652,8 +8576,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                        <'msg_sig', ciphertext.388, msgKeyIndicator.396,
                         x.761^inv((~ecdhSk.384*x.762)), (%i.401%+%1),
                         <$Them.383, theirIdPk.400, $Me.382, pk(~idKey.386)>,
-                        maybeTheirNewKemPk.395, Just(encap(z.404, pqpk(~kemSk.387))), None
-                       >,
+                        maybeTheirNewKemPk.395, Just(encap(z.404, pqpk(~kemSk.387))), None>,
                        theirIdPk.400)
         z.3   = sdec(ciphertext.388,
                      hkdf(suffix(hkdf(hkdf(hkdf(x.761^inv(x.762), rootKey.397), z.404),
@@ -8691,8 +8614,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                        <'msg_sig', ciphertext.388, msgKeyIndicator.396,
                         x.761^(x.762*inv(~ecdhSk.384)), (%i.401%+%1),
                         <$Them.383, theirIdPk.400, $Me.382, pk(~idKey.386)>,
-                        maybeTheirNewKemPk.395, Just(encap(z.404, pqpk(~kemSk.387))), None
-                       >,
+                        maybeTheirNewKemPk.395, Just(encap(z.404, pqpk(~kemSk.387))), None>,
                        theirIdPk.400)
         z.3   = sdec(ciphertext.388,
                      hkdf(suffix(hkdf(hkdf(hkdf(x.761^x.762, rootKey.397), z.404),
@@ -8769,8 +8691,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
                        <'msg_sig', ciphertext.389, msgKeyIndicator.397,
                         x.762^(x.763*inv((~ecdhSk.385*x.764))), (%i.402%+%1),
                         <$Them.384, theirIdPk.401, $Me.383, pk(~idKey.387)>,
-                        maybeTheirNewKemPk.396, Just(encap(z.405, pqpk(~kemSk.388))), None
-                       >,
+                        maybeTheirNewKemPk.396, Just(encap(z.405, pqpk(~kemSk.388))), None>,
                        theirIdPk.401)
         z.3   = sdec(ciphertext.389,
                      hkdf(suffix(hkdf(hkdf(hkdf(x.762^(x.763*inv(x.764)), rootKey.398),
@@ -8795,9 +8716,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         rootKey
               = rootKey.398
         signature
-              = sign(<'msg_sig', ciphertext.389, msgKeyIndicator.397,
-                      DH_neutral, (%i.402%+%1),
-                      <$Them.384, pk(x.764), $Me.383, pk(~idKey.387)>,
+              = sign(<'msg_sig', ciphertext.389, msgKeyIndicator.397, DH_neutral,
+                      (%i.402%+%1), <$Them.384, pk(x.764), $Me.383, pk(~idKey.387)>,
                       maybeTheirNewKemPk.396, Just(kemEncap.394), None>,
                      x.764)
         theirEcdhPk
@@ -8831,11 +8751,9 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         rootKey
               = rootKey.398
         signature
-              = sign(<'msg_sig', ciphertext.389, msgKeyIndicator.397,
-                      DH_neutral, (%i.402%+%1),
-                      <$Them.384, pk(x.764), $Me.383, pk(~idKey.387)>,
-                      maybeTheirNewKemPk.396, Just(encap(z.405, pqpk(~kemSk.388))), None
-                     >,
+              = sign(<'msg_sig', ciphertext.389, msgKeyIndicator.397, DH_neutral,
+                      (%i.402%+%1), <$Them.384, pk(x.764), $Me.383, pk(~idKey.387)>,
+                      maybeTheirNewKemPk.396, Just(encap(z.405, pqpk(~kemSk.388))), None>,
                      x.764)
         theirEcdhPk
               = DH_neutral
@@ -8869,9 +8787,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         rootKey
               = rootKey.399
         signature
-              = sign(<'msg_sig', ciphertext.390, msgKeyIndicator.398,
-                      theirEcdhPk.401, (%i.403%+%1),
-                      <$Them.385, pk(x.766), $Me.384, pk(~idKey.388)>,
+              = sign(<'msg_sig', ciphertext.390, msgKeyIndicator.398, theirEcdhPk.401,
+                      (%i.403%+%1), <$Them.385, pk(x.766), $Me.384, pk(~idKey.388)>,
                       maybeTheirNewKemPk.397, Just(kemEncap.395), None>,
                      x.766)
         theirEcdhPk
@@ -8883,8 +8800,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         z.1   = theirEcdhPk.401^~ecdhSk.386
         z.2   = true
         z.3   = sdec(ciphertext.390,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.401^~ecdhSk.386,
-                                                rootKey.399),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.401^~ecdhSk.386, rootKey.399),
                                            decap(kemEncap.395, ~kemSk.389)),
                                       <$Them.385, pk(x.766), $Me.384, pk(~idKey.388)>)),
                           'msg_key'))
@@ -8910,8 +8826,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.390, msgKeyIndicator.398,
                       z.407^inv(~ecdhSk.386), (%i.403%+%1),
-                      <$Them.385, pk(x.766), $Me.384, pk(~idKey.388)>,
-                      maybeTheirNewKemPk.397, Just(kemEncap.395), None>,
+                      <$Them.385, pk(x.766), $Me.384, pk(~idKey.388)>, maybeTheirNewKemPk.397,
+                      Just(kemEncap.395), None>,
                      x.766)
         theirEcdhPk
               = z.407^inv(~ecdhSk.386)
@@ -8946,11 +8862,9 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         rootKey
               = rootKey.399
         signature
-              = sign(<'msg_sig', ciphertext.390, msgKeyIndicator.398,
-                      theirEcdhPk.401, (%i.403%+%1),
-                      <$Them.385, pk(x.766), $Me.384, pk(~idKey.388)>,
-                      maybeTheirNewKemPk.397, Just(encap(z.406, pqpk(~kemSk.389))), None
-                     >,
+              = sign(<'msg_sig', ciphertext.390, msgKeyIndicator.398, theirEcdhPk.401,
+                      (%i.403%+%1), <$Them.385, pk(x.766), $Me.384, pk(~idKey.388)>,
+                      maybeTheirNewKemPk.397, Just(encap(z.406, pqpk(~kemSk.389))), None>,
                      x.766)
         theirEcdhPk
               = theirEcdhPk.401
@@ -8961,8 +8875,7 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         z.1   = theirEcdhPk.401^~ecdhSk.386
         z.2   = true
         z.3   = sdec(ciphertext.390,
-                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.401^~ecdhSk.386,
-                                                rootKey.399),
+                     hkdf(suffix(hkdf(hkdf(hkdf(theirEcdhPk.401^~ecdhSk.386, rootKey.399),
                                            z.406),
                                       <$Them.385, pk(x.766), $Me.384, pk(~idKey.388)>)),
                           'msg_key'))
@@ -8988,9 +8901,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.390, msgKeyIndicator.398,
                       z.407^inv(~ecdhSk.386), (%i.403%+%1),
-                      <$Them.385, pk(x.766), $Me.384, pk(~idKey.388)>,
-                      maybeTheirNewKemPk.397, Just(encap(z.406, pqpk(~kemSk.389))), None
-                     >,
+                      <$Them.385, pk(x.766), $Me.384, pk(~idKey.388)>, maybeTheirNewKemPk.397,
+                      Just(encap(z.406, pqpk(~kemSk.389))), None>,
                      x.766)
         theirEcdhPk
               = z.407^inv(~ecdhSk.386)
@@ -9024,9 +8936,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         rootKey
               = rootKey.400
         signature
-              = sign(<'msg_sig', ciphertext.391, msgKeyIndicator.399,
-                      x.765^x.766, (%i.404%+%1),
-                      <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>,
+              = sign(<'msg_sig', ciphertext.391, msgKeyIndicator.399, x.765^x.766,
+                      (%i.404%+%1), <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>,
                       maybeTheirNewKemPk.398, Just(kemEncap.396), None>,
                      x.768)
         theirEcdhPk
@@ -9064,8 +8975,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.391, msgKeyIndicator.399,
                       x.765^inv((~ecdhSk.387*x.766)), (%i.404%+%1),
-                      <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>,
-                      maybeTheirNewKemPk.398, Just(kemEncap.396), None>,
+                      <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>, maybeTheirNewKemPk.398,
+                      Just(kemEncap.396), None>,
                      x.768)
         theirEcdhPk
               = x.765^inv((~ecdhSk.387*x.766))
@@ -9102,8 +9013,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.391, msgKeyIndicator.399,
                       x.765^(x.766*inv(~ecdhSk.387)), (%i.404%+%1),
-                      <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>,
-                      maybeTheirNewKemPk.398, Just(kemEncap.396), None>,
+                      <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>, maybeTheirNewKemPk.398,
+                      Just(kemEncap.396), None>,
                      x.768)
         theirEcdhPk
               = x.765^(x.766*inv(~ecdhSk.387))
@@ -9138,11 +9049,9 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         rootKey
               = rootKey.400
         signature
-              = sign(<'msg_sig', ciphertext.391, msgKeyIndicator.399,
-                      x.765^x.766, (%i.404%+%1),
-                      <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>,
-                      maybeTheirNewKemPk.398, Just(encap(z.407, pqpk(~kemSk.390))), None
-                     >,
+              = sign(<'msg_sig', ciphertext.391, msgKeyIndicator.399, x.765^x.766,
+                      (%i.404%+%1), <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>,
+                      maybeTheirNewKemPk.398, Just(encap(z.407, pqpk(~kemSk.390))), None>,
                      x.768)
         theirEcdhPk
               = x.765^x.766
@@ -9179,9 +9088,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.391, msgKeyIndicator.399,
                       x.765^inv((~ecdhSk.387*x.766)), (%i.404%+%1),
-                      <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>,
-                      maybeTheirNewKemPk.398, Just(encap(z.407, pqpk(~kemSk.390))), None
-                     >,
+                      <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>, maybeTheirNewKemPk.398,
+                      Just(encap(z.407, pqpk(~kemSk.390))), None>,
                      x.768)
         theirEcdhPk
               = x.765^inv((~ecdhSk.387*x.766))
@@ -9217,9 +9125,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.391, msgKeyIndicator.399,
                       x.765^(x.766*inv(~ecdhSk.387)), (%i.404%+%1),
-                      <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>,
-                      maybeTheirNewKemPk.398, Just(encap(z.407, pqpk(~kemSk.390))), None
-                     >,
+                      <$Them.386, pk(x.768), $Me.385, pk(~idKey.389)>, maybeTheirNewKemPk.398,
+                      Just(encap(z.407, pqpk(~kemSk.390))), None>,
                      x.768)
         theirEcdhPk
               = x.765^(x.766*inv(~ecdhSk.387))
@@ -9255,8 +9162,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.392, msgKeyIndicator.400,
                       x.766^(x.767*inv((~ecdhSk.388*x.768))), (%i.405%+%1),
-                      <$Them.387, pk(x.770), $Me.386, pk(~idKey.390)>,
-                      maybeTheirNewKemPk.399, Just(kemEncap.397), None>,
+                      <$Them.387, pk(x.770), $Me.386, pk(~idKey.390)>, maybeTheirNewKemPk.399,
+                      Just(kemEncap.397), None>,
                      x.770)
         theirEcdhPk
               = x.766^(x.767*inv((~ecdhSk.388*x.768)))
@@ -9293,9 +9200,8 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
         signature
               = sign(<'msg_sig', ciphertext.392, msgKeyIndicator.400,
                       x.766^(x.767*inv((~ecdhSk.388*x.768))), (%i.405%+%1),
-                      <$Them.387, pk(x.770), $Me.386, pk(~idKey.390)>,
-                      maybeTheirNewKemPk.399, Just(encap(z.408, pqpk(~kemSk.391))), None
-                     >,
+                      <$Them.387, pk(x.770), $Me.386, pk(~idKey.390)>, maybeTheirNewKemPk.399,
+                      Just(encap(z.408, pqpk(~kemSk.391))), None>,
                      x.770)
         theirEcdhPk
               = x.766^(x.767*inv((~ecdhSk.388*x.768)))
@@ -9372,8 +9278,7 @@ guarded formula characterizing all counter-examples:
   (KeysUsed( theirIdPk, a, b, c, d, e, f, g, h, i, j, k ) @ #t)
  ∧
   ∀ #x.
-   (SessionStart( theirIdPk ) @ #x) ∧
-   (SessionInfo( id, %1, me, them ) @ #x)
+   (SessionStart( theirIdPk ) @ #x) ∧ (SessionInfo( id, %1, me, them ) @ #x)
   ⇒
    ⊥"
 */
@@ -9401,8 +9306,7 @@ lemma Auto_ECDHSkOrigin [reuse, use_induction]:
     ((SessionInfo( id, li, me, them ) @ #t) ∧
      (KeysUsed( a, myPk, b, c, d, e, f, g, h, i, j, k ) @ #t)) ⇒
     ((∃ #x.
-       (ECDHKeyGen( id, me, them, myPk ) @ #x) ∧
-       ((#x < #t) ∨ (#x = #t))) ∨
+       (ECDHKeyGen( id, me, them, myPk ) @ #x) ∧ ((#x < #t) ∨ (#x = #t))) ∨
      (∃ #x. (ECDHPreKeyGen( me, myPk ) @ #x) ∧ (#x < #t)))"
 /*
 guarded formula characterizing all counter-examples:
@@ -9411,21 +9315,19 @@ guarded formula characterizing all counter-examples:
   (KeysUsed( a, myPk, b, c, d, e, f, g, h, i, j, k ) @ #t)
  ∧
   (∀ #x.
-    (ECDHKeyGen( id, me, them, myPk ) @ #x)
-   ⇒
-    (¬(#x < #t)) ∧ (¬(#x = #t))) ∧
+    (ECDHKeyGen( id, me, them, myPk ) @ #x) ⇒ (¬(#x < #t)) ∧ (¬(#x = #t))) ∧
   (∀ #x. (ECDHPreKeyGen( me, myPk ) @ #x) ⇒ ¬(#x < #t))"
 */
 by sorry
 
 lemma Auto_RootKeyConnectionSend [reuse, use_induction]:
   all-traces
-  "∀ id i me them m theirIdPk myPk theirPk maybeNewKemPk ecdhSS
-     myKemPk maybeTheirKemPk kemSS encapPk rk ck mk #t.
+  "∀ id i me them m theirIdPk myPk theirPk maybeNewKemPk ecdhSS myKemPk
+     maybeTheirKemPk kemSS encapPk rk ck mk #t.
     (((MessageSent( id, i, me, them, m ) @ #t) ∧
       (SymmetricRatchet( ) @ #t)) ∧
-     (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, maybeNewKemPk,
-                myKemPk, maybeTheirKemPk, kemSS, encapPk, rk, ck, mk
+     (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, maybeNewKemPk, myKemPk,
+                maybeTheirKemPk, kemSS, encapPk, rk, ck, mk
       ) @ #t)) ⇒
     (∃ i2 #x.
       ((((SessionInfo( id, i2, me, them ) @ #x) ∧
@@ -9437,12 +9339,12 @@ lemma Auto_RootKeyConnectionSend [reuse, use_induction]:
       (i2 ⊏ i))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id i me them m theirIdPk myPk theirPk maybeNewKemPk ecdhSS
-   myKemPk maybeTheirKemPk kemSS encapPk rk ck mk #t.
+"∃ id i me them m theirIdPk myPk theirPk maybeNewKemPk ecdhSS myKemPk
+   maybeTheirKemPk kemSS encapPk rk ck mk #t.
   (MessageSent( id, i, me, them, m ) @ #t) ∧
   (SymmetricRatchet( ) @ #t) ∧
-  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, maybeNewKemPk,
-             myKemPk, maybeTheirKemPk, kemSS, encapPk, rk, ck, mk
+  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, maybeNewKemPk, myKemPk,
+             maybeTheirKemPk, kemSS, encapPk, rk, ck, mk
    ) @ #t)
  ∧
   ∀ i2 #x.
@@ -9458,12 +9360,12 @@ by sorry
 
 lemma Auto_RootKeyConnectionReceive [reuse, use_induction]:
   all-traces
-  "∀ id i me them m theirIdPk myPk theirPk ecdhSS myKemPk
-     maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
+  "∀ id i me them m theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+     maybeNewKemPk kemSS encapPk rk ck mk #t.
     (((MessageReceived( id, i, them, me, m ) @ #t) ∧
       (SymmetricRatchet( ) @ #t)) ∧
-     (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-                maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+     (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+                maybeNewKemPk, kemSS, encapPk, rk, ck, mk
       ) @ #t)) ⇒
     (∃ i2 #x.
       ((((SessionInfo( id, i2, me, them ) @ #x) ∧
@@ -9475,12 +9377,12 @@ lemma Auto_RootKeyConnectionReceive [reuse, use_induction]:
       (i2 ⊏ i))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id i me them m theirIdPk myPk theirPk ecdhSS myKemPk
-   maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
+"∃ id i me them m theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+   maybeNewKemPk kemSS encapPk rk ck mk #t.
   (MessageReceived( id, i, them, me, m ) @ #t) ∧
   (SymmetricRatchet( ) @ #t) ∧
-  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+             maybeNewKemPk, kemSS, encapPk, rk, ck, mk
    ) @ #t)
  ∧
   ∀ i2 #x.
@@ -9496,23 +9398,20 @@ by sorry
 
 lemma Auto_RootKeyMonotonicity [reuse, use_induction]:
   all-traces
-  "∀ id li1 li2 me1 me2 them1 them2 a1 a2 b1 b2 c1 c2 d1 d2 e1 e2 f1
-     f2 g1 g2 h1 h2 i1 i2 rk1 rk2 j1 j2 k1 k2 #t1 #t2.
+  "∀ id li1 li2 me1 me2 them1 them2 a1 a2 b1 b2 c1 c2 d1 d2 e1 e2 f1 f2 g1
+     g2 h1 h2 i1 i2 rk1 rk2 j1 j2 k1 k2 #t1 #t2.
     (((((SessionInfo( id, li1, me1, them1 ) @ #t1) ∧
-        (KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, rk1, j1, k1
-         ) @ #t1)) ∧
+        (KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, rk1, j1, k1 ) @ #t1)) ∧
        (SessionInfo( id, li2, me2, them2 ) @ #t2)) ∧
-      (KeysUsed( a2, b2, c2, d2, e2, f2, g2, h2, i2, rk2, j2, k2
-       ) @ #t2)) ∧
+      (KeysUsed( a2, b2, c2, d2, e2, f2, g2, h2, i2, rk2, j2, k2 ) @ #t2)) ∧
      (#t1 < #t2)) ⇒
     ((rk1 ⊏ rk2) ∨ (rk1 = rk2))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id li1 li2 me1 me2 them1 them2 a1 a2 b1 b2 c1 c2 d1 d2 e1 e2 f1
-   f2 g1 g2 h1 h2 i1 i2 rk1 rk2 j1 j2 k1 k2 #t1 #t2.
+"∃ id li1 li2 me1 me2 them1 them2 a1 a2 b1 b2 c1 c2 d1 d2 e1 e2 f1 f2 g1
+   g2 h1 h2 i1 i2 rk1 rk2 j1 j2 k1 k2 #t1 #t2.
   (SessionInfo( id, li1, me1, them1 ) @ #t1) ∧
-  (KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, rk1, j1, k1
-   ) @ #t1) ∧
+  (KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, rk1, j1, k1 ) @ #t1) ∧
   (SessionInfo( id, li2, me2, them2 ) @ #t2) ∧
   (KeysUsed( a2, b2, c2, d2, e2, f2, g2, h2, i2, rk2, j2, k2 ) @ #t2)
  ∧
@@ -9522,8 +9421,7 @@ by sorry
 
 lemma Auto_ChainKeyMonotonicity [reuse, use_induction,
                                  hide_lemma=Auto_SessionStart, hide_lemma=Auto_SessionStartUnique,
-                                 hide_lemma=Auto_RootKeyConnectionSend,
-                                 hide_lemma=Auto_ECDHSkOrigin,
+                                 hide_lemma=Auto_RootKeyConnectionSend, hide_lemma=Auto_ECDHSkOrigin,
                                  hide_lemma=Auto_RootKeyConnectionReceive,
                                  hide_lemma=Auto_RootKeyMonotonicity]:
   all-traces
@@ -9544,8 +9442,8 @@ lemma Auto_RootKeyConnectionInjectivity [reuse, use_induction,
                                          hide_lemma=Auto_RootKeyConnectionReceive,
                                          hide_lemma=Auto_ChainKeyMonotonicity]:
   all-traces
-  "∀ id i1 i2 me them theirIdPk myPk theirPk ecdhSS myKemPk
-     maybeTheirKemPk maybeNewKemPk kemSS encapPk rk #t1 #t2.
+  "∀ id i1 i2 me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+     maybeNewKemPk kemSS encapPk rk #t1 #t2.
     ((((SessionInfo( id, i1, me, them ) @ #t1) ∧
        (PublicKeyRatchet( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
                           maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk
@@ -9557,8 +9455,8 @@ lemma Auto_RootKeyConnectionInjectivity [reuse, use_induction,
     (#t1 = #t2)"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id i1 i2 me them theirIdPk myPk theirPk ecdhSS myKemPk
-   maybeTheirKemPk maybeNewKemPk kemSS encapPk rk #t1 #t2.
+"∃ id i1 i2 me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+   maybeNewKemPk kemSS encapPk rk #t1 #t2.
   (SessionInfo( id, i1, me, them ) @ #t1) ∧
   (PublicKeyRatchet( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
                      maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk
@@ -9574,19 +9472,16 @@ by sorry
 
 lemma Auto_MkCkRelation [reuse, use_induction]:
   all-traces
-  "∀ a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 ck1
-     ck2 mk #t1 #t2.
-    ((KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, j1, ck1, mk
-      ) @ #t1) ∧
-     (KeysUsed( a2, b2, c2, d2, e2, f2, g2, h2, i2, j2, ck2, mk
-      ) @ #t2)) ⇒
+  "∀ a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 ck1 ck2 mk
+     #t1 #t2.
+    ((KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, j1, ck1, mk ) @ #t1) ∧
+     (KeysUsed( a2, b2, c2, d2, e2, f2, g2, h2, i2, j2, ck2, mk ) @ #t2)) ⇒
     (ck1 = ck2)"
 /*
 guarded formula characterizing all counter-examples:
-"∃ a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 ck1
-   ck2 mk #t1 #t2.
-  (KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, j1, ck1, mk
-   ) @ #t1) ∧
+"∃ a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 ck1 ck2 mk
+   #t1 #t2.
+  (KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, j1, ck1, mk ) @ #t1) ∧
   (KeysUsed( a2, b2, c2, d2, e2, f2, g2, h2, i2, j2, ck2, mk ) @ #t2)
  ∧
   ¬(ck1 = ck2)"
@@ -9595,19 +9490,16 @@ by sorry
 
 lemma Auto_CkRkRelation [reuse, use_induction]:
   all-traces
-  "∀ a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 rk1
-     rk2 ck #t1 #t2.
-    ((KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, rk1, ck, j1
-      ) @ #t1) ∧
-     (KeysUsed( a2, b2, c2, d2, e2, f2, g2, h2, i2, rk2, ck, j2
-      ) @ #t2)) ⇒
+  "∀ a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 rk1 rk2 ck
+     #t1 #t2.
+    ((KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, rk1, ck, j1 ) @ #t1) ∧
+     (KeysUsed( a2, b2, c2, d2, e2, f2, g2, h2, i2, rk2, ck, j2 ) @ #t2)) ⇒
     (rk1 = rk2)"
 /*
 guarded formula characterizing all counter-examples:
-"∃ a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 rk1
-   rk2 ck #t1 #t2.
-  (KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, rk1, ck, j1
-   ) @ #t1) ∧
+"∃ a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 rk1 rk2 ck
+   #t1 #t2.
+  (KeysUsed( a1, b1, c1, d1, e1, f1, g1, h1, i1, rk1, ck, j1 ) @ #t1) ∧
   (KeysUsed( a2, b2, c2, d2, e2, f2, g2, h2, i2, rk2, ck, j2 ) @ #t2)
  ∧
   ¬(rk1 = rk2)"
@@ -9616,11 +9508,11 @@ by sorry
 
 lemma ECDHSSCompromise [reuse]:
   all-traces
-  "∀ id i me them m theirIdPk myPk theirPk ecdhSS myKemPk
-     maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
+  "∀ id i me them m theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+     maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
     (((MessageSent( id, i, me, them, m ) @ #t1) ∧
-      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-                 maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+                 maybeNewKemPk, kemSS, encapPk, rk, ck, mk
        ) @ #t1)) ∧
      (!KU( ecdhSS ) @ #t2)) ⇒
     (((((∃ #x. RevealECDHPreKey( them, theirPk ) @ #x) ∨
@@ -9630,11 +9522,11 @@ lemma ECDHSSCompromise [reuse]:
      (∃ #x. PQAttack( ) @ #x))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id i me them m theirIdPk myPk theirPk ecdhSS myKemPk
-   maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
+"∃ id i me them m theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+   maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
   (MessageSent( id, i, me, them, m ) @ #t1) ∧
-  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+             maybeNewKemPk, kemSS, encapPk, rk, ck, mk
    ) @ #t1) ∧
   (!KU( ecdhSS ) @ #t2)
  ∧
@@ -67293,28 +67185,26 @@ lemma Auto_MyKemKeyOrigin [reuse, use_induction,
                            hide_lemma=ECDHSSCompromise, hide_lemma=Auto_SessionStart,
                            hide_lemma=Auto_ECDHSkOrigin]:
   all-traces
-  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-     maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
+  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+     maybeNewKemPk kemSS encapPk rk ck mk #t.
     (((SessionInfo( id, i, me, them ) @ #t) ∧
-      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-                 maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+                 maybeNewKemPk, kemSS, encapPk, rk, ck, mk
        ) @ #t)) ∧
      (¬(KemKeyGen( id, me, them, Just(myKemPk) ) @ #t))) ⇒
-    ((∃ #x.
-       (KemKeyGen( id, me, them, Just(myKemPk) ) @ #x) ∧ (#x < #t)) ∨
+    ((∃ #x. (KemKeyGen( id, me, them, Just(myKemPk) ) @ #x) ∧ (#x < #t)) ∨
      (∃ #x. (KemPreKeyGen( me, myKemPk ) @ #x) ∧ (#x < #t)))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-   maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
+"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+   maybeNewKemPk kemSS encapPk rk ck mk #t.
   (SessionInfo( id, i, me, them ) @ #t) ∧
-  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+             maybeNewKemPk, kemSS, encapPk, rk, ck, mk
    ) @ #t)
  ∧
   (¬(KemKeyGen( id, me, them, Just(myKemPk) ) @ #t)) ∧
-  (∀ #x.
-    (KemKeyGen( id, me, them, Just(myKemPk) ) @ #x) ⇒ ¬(#x < #t)) ∧
+  (∀ #x. (KemKeyGen( id, me, them, Just(myKemPk) ) @ #x) ⇒ ¬(#x < #t)) ∧
   (∀ #x. (KemPreKeyGen( me, myKemPk ) @ #x) ⇒ ¬(#x < #t))"
 */
 by sorry
@@ -67323,30 +67213,27 @@ lemma Auto_MaybeNewKemKeyOrigin [reuse, use_induction,
                                  hide_lemma=ECDHSSCompromise, hide_lemma=Auto_SessionStart,
                                  hide_lemma=Auto_ECDHSkOrigin, hide_lemma=Auto_MyKemKeyOrigin]:
   all-traces
-  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-     maybeTheirKemPk newKemPk kemSS encapPk rk ck mk #t.
+  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+     newKemPk kemSS encapPk rk ck mk #t.
     (((SessionInfo( id, i, me, them ) @ #t) ∧
-      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-                 maybeTheirKemPk, Just(newKemPk), kemSS, encapPk, rk, ck, mk
+      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+                 Just(newKemPk), kemSS, encapPk, rk, ck, mk
        ) @ #t)) ∧
      (¬(NewKemPublicKey( id, me, them, Just(newKemPk) ) @ #t))) ⇒
     (∃ #x.
-      (NewKemPublicKey( id, me, them, Just(newKemPk) ) @ #x) ∧
-      (#x < #t))"
+      (NewKemPublicKey( id, me, them, Just(newKemPk) ) @ #x) ∧ (#x < #t))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-   maybeTheirKemPk newKemPk kemSS encapPk rk ck mk #t.
+"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+   newKemPk kemSS encapPk rk ck mk #t.
   (SessionInfo( id, i, me, them ) @ #t) ∧
-  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-             maybeTheirKemPk, Just(newKemPk), kemSS, encapPk, rk, ck, mk
+  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+             Just(newKemPk), kemSS, encapPk, rk, ck, mk
    ) @ #t)
  ∧
   (¬(NewKemPublicKey( id, me, them, Just(newKemPk) ) @ #t)) ∧
   (∀ #x.
-    (NewKemPublicKey( id, me, them, Just(newKemPk) ) @ #x)
-   ⇒
-    ¬(#x < #t))"
+    (NewKemPublicKey( id, me, them, Just(newKemPk) ) @ #x) ⇒ ¬(#x < #t))"
 */
 by sorry
 
@@ -67357,63 +67244,55 @@ lemma Auto_TheirKemKeyOrigin [reuse, use_induction,
   "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk theirKemPk
      maybeNewKemPk kemSS encapPk rk ck mk #t.
     (((SessionInfo( id, i, me, them ) @ #t) ∧
-      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-                 Just(theirKemPk), maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, Just(theirKemPk),
+                 maybeNewKemPk, kemSS, encapPk, rk, ck, mk
        ) @ #t)) ∧
      (¬(NewKemPublicKey( id, me, them, Just(theirKemPk) ) @ #t))) ⇒
     (∃ #x.
-      (NewKemPublicKey( id, me, them, Just(theirKemPk) ) @ #x) ∧
-      (#x < #t))"
+      (NewKemPublicKey( id, me, them, Just(theirKemPk) ) @ #x) ∧ (#x < #t))"
 /*
 guarded formula characterizing all counter-examples:
 "∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk theirKemPk
    maybeNewKemPk kemSS encapPk rk ck mk #t.
   (SessionInfo( id, i, me, them ) @ #t) ∧
-  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-             Just(theirKemPk), maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, Just(theirKemPk),
+             maybeNewKemPk, kemSS, encapPk, rk, ck, mk
    ) @ #t)
  ∧
   (¬(NewKemPublicKey( id, me, them, Just(theirKemPk) ) @ #t)) ∧
   (∀ #x.
-    (NewKemPublicKey( id, me, them, Just(theirKemPk) ) @ #x)
-   ⇒
-    ¬(#x < #t))"
+    (NewKemPublicKey( id, me, them, Just(theirKemPk) ) @ #x) ⇒ ¬(#x < #t))"
 */
 by sorry
 
 lemma Auto_KemSSOrigin [reuse, use_induction,
                         hide_lemma=ECDHSSCompromise, hide_lemma=Auto_SessionStart,
                         hide_lemma=Auto_ECDHSkOrigin, hide_lemma=Auto_MyKemKeyOrigin,
-                        hide_lemma=Auto_MaybeNewKemKeyOrigin,
-                        hide_lemma=Auto_TheirKemKeyOrigin]:
+                        hide_lemma=Auto_MaybeNewKemKeyOrigin, hide_lemma=Auto_TheirKemKeyOrigin]:
   all-traces
-  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-     maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
+  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+     maybeNewKemPk kemSS encapPk rk ck mk #t.
     ((((SessionInfo( id, i, me, them ) @ #t) ∧
-       (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-                  maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+       (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+                  maybeNewKemPk, kemSS, encapPk, rk, ck, mk
         ) @ #t)) ∧
       (¬(NewKemSS( id, me, them, kemSS, encapPk ) @ #t))) ∧
      (¬(DecapKemSS( id, me, them, kemSS, encapPk ) @ #t))) ⇒
-    ((∃ #x.
-       (NewKemSS( id, me, them, kemSS, encapPk ) @ #x) ∧ (#x < #t)) ∨
-     (∃ #x.
-       (DecapKemSS( id, me, them, kemSS, encapPk ) @ #x) ∧ (#x < #t)))"
+    ((∃ #x. (NewKemSS( id, me, them, kemSS, encapPk ) @ #x) ∧ (#x < #t)) ∨
+     (∃ #x. (DecapKemSS( id, me, them, kemSS, encapPk ) @ #x) ∧ (#x < #t)))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-   maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
+"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+   maybeNewKemPk kemSS encapPk rk ck mk #t.
   (SessionInfo( id, i, me, them ) @ #t) ∧
-  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+             maybeNewKemPk, kemSS, encapPk, rk, ck, mk
    ) @ #t)
  ∧
   (¬(NewKemSS( id, me, them, kemSS, encapPk ) @ #t)) ∧
   (¬(DecapKemSS( id, me, them, kemSS, encapPk ) @ #t)) ∧
-  (∀ #x.
-    (NewKemSS( id, me, them, kemSS, encapPk ) @ #x) ⇒ ¬(#x < #t)) ∧
-  (∀ #x.
-    (DecapKemSS( id, me, them, kemSS, encapPk ) @ #x) ⇒ ¬(#x < #t))"
+  (∀ #x. (NewKemSS( id, me, them, kemSS, encapPk ) @ #x) ⇒ ¬(#x < #t)) ∧
+  (∀ #x. (DecapKemSS( id, me, them, kemSS, encapPk ) @ #x) ⇒ ¬(#x < #t))"
 */
 by sorry
 
@@ -67421,11 +67300,11 @@ lemma Auto_KemKeyOriginEncap [reuse, hide_lemma=ECDHSSCompromise,
                               hide_lemma=Auto_SessionStart, hide_lemma=Auto_ECDHSkOrigin,
                               hide_lemma=Auto_KemSSOrigin]:
   all-traces
-  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-     maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
+  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+     maybeNewKemPk kemSS encapPk rk ck mk #t.
     ((((SessionInfo( id, i, me, them ) @ #t) ∧
-       (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-                  maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+       (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+                  maybeNewKemPk, kemSS, encapPk, rk, ck, mk
         ) @ #t)) ∧
       (NewKemSS( id, me, them, kemSS, encapPk ) @ #t)) ∧
      (¬(NewKemPublicKey( id, me, them, Just(encapPk) ) @ #t))) ⇒
@@ -67433,19 +67312,17 @@ lemma Auto_KemKeyOriginEncap [reuse, hide_lemma=ECDHSSCompromise,
       (NewKemPublicKey( id, me, them, Just(encapPk) ) @ #x) ∧ (#x < #t))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-   maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
+"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+   maybeNewKemPk kemSS encapPk rk ck mk #t.
   (SessionInfo( id, i, me, them ) @ #t) ∧
-  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+             maybeNewKemPk, kemSS, encapPk, rk, ck, mk
    ) @ #t) ∧
   (NewKemSS( id, me, them, kemSS, encapPk ) @ #t)
  ∧
   (¬(NewKemPublicKey( id, me, them, Just(encapPk) ) @ #t)) ∧
   (∀ #x.
-    (NewKemPublicKey( id, me, them, Just(encapPk) ) @ #x)
-   ⇒
-    ¬(#x < #t))"
+    (NewKemPublicKey( id, me, them, Just(encapPk) ) @ #x) ⇒ ¬(#x < #t))"
 */
 by sorry
 
@@ -67453,70 +67330,61 @@ lemma Auto_KemKeyOriginDecap [reuse, hide_lemma=ECDHSSCompromise,
                               hide_lemma=Auto_SessionStart, hide_lemma=Auto_ECDHSkOrigin,
                               hide_lemma=Auto_KemSSOrigin]:
   all-traces
-  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-     maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
+  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+     maybeNewKemPk kemSS encapPk rk ck mk #t.
     (((SessionInfo( id, i, me, them ) @ #t) ∧
-      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-                 maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+                 maybeNewKemPk, kemSS, encapPk, rk, ck, mk
        ) @ #t)) ∧
      (DecapKemSS( id, me, them, kemSS, encapPk ) @ #t)) ⇒
-    ((∃ #x.
-       (KemKeyGen( id, me, them, Just(encapPk) ) @ #x) ∧ (#x < #t)) ∨
+    ((∃ #x. (KemKeyGen( id, me, them, Just(encapPk) ) @ #x) ∧ (#x < #t)) ∨
      (∃ #x. (KemPreKeyGen( me, encapPk ) @ #x) ∧ (#x < #t)))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-   maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t.
+"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+   maybeNewKemPk kemSS encapPk rk ck mk #t.
   (SessionInfo( id, i, me, them ) @ #t) ∧
-  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+             maybeNewKemPk, kemSS, encapPk, rk, ck, mk
    ) @ #t) ∧
   (DecapKemSS( id, me, them, kemSS, encapPk ) @ #t)
  ∧
-  (∀ #x.
-    (KemKeyGen( id, me, them, Just(encapPk) ) @ #x) ⇒ ¬(#x < #t)) ∧
+  (∀ #x. (KemKeyGen( id, me, them, Just(encapPk) ) @ #x) ⇒ ¬(#x < #t)) ∧
   (∀ #x. (KemPreKeyGen( me, encapPk ) @ #x) ⇒ ¬(#x < #t))"
 */
 by sorry
 
-lemma RkFixesKEMSS [reuse, use_induction,
-                    hide_lemma=ECDHSSCompromise, hide_lemma=Auto_SessionStart,
-                    hide_lemma=Auto_ECDHSkOrigin]:
+lemma RkFixesKEMSS [reuse, use_induction, hide_lemma=ECDHSSCompromise,
+                    hide_lemma=Auto_SessionStart, hide_lemma=Auto_ECDHSkOrigin]:
   all-traces
-  "∀ rk kemSS1 kemSS2 a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2
-     g2 h2 i2 j2 id1 li1 me1 them1 id2 li2 me2 them2 #t1 #t2.
+  "∀ rk kemSS1 kemSS2 a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2
+     i2 j2 id1 li1 me1 them1 id2 li2 me2 them2 #t1 #t2.
     ((((SessionInfo( id1, li1, me1, them1 ) @ #t1) ∧
-       (KeysUsed( a1, b1, c1, d1, e1, f1, g1, kemSS1, h1, rk, i1, j1
-        ) @ #t1)) ∧
+       (KeysUsed( a1, b1, c1, d1, e1, f1, g1, kemSS1, h1, rk, i1, j1 ) @ #t1)) ∧
       (SessionInfo( id2, li2, me2, them2 ) @ #t2)) ∧
-     (KeysUsed( a2, b2, c2, d2, e2, f2, g2, kemSS2, h2, rk, i2, j2
-      ) @ #t2)) ⇒
+     (KeysUsed( a2, b2, c2, d2, e2, f2, g2, kemSS2, h2, rk, i2, j2 ) @ #t2)) ⇒
     (kemSS1 = kemSS2)"
 /*
 guarded formula characterizing all counter-examples:
-"∃ rk kemSS1 kemSS2 a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2
-   g2 h2 i2 j2 id1 li1 me1 them1 id2 li2 me2 them2 #t1 #t2.
+"∃ rk kemSS1 kemSS2 a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2 h2
+   i2 j2 id1 li1 me1 them1 id2 li2 me2 them2 #t1 #t2.
   (SessionInfo( id1, li1, me1, them1 ) @ #t1) ∧
-  (KeysUsed( a1, b1, c1, d1, e1, f1, g1, kemSS1, h1, rk, i1, j1
-   ) @ #t1) ∧
+  (KeysUsed( a1, b1, c1, d1, e1, f1, g1, kemSS1, h1, rk, i1, j1 ) @ #t1) ∧
   (SessionInfo( id2, li2, me2, them2 ) @ #t2) ∧
-  (KeysUsed( a2, b2, c2, d2, e2, f2, g2, kemSS2, h2, rk, i2, j2
-   ) @ #t2)
+  (KeysUsed( a2, b2, c2, d2, e2, f2, g2, kemSS2, h2, rk, i2, j2 ) @ #t2)
  ∧
   ¬(kemSS1 = kemSS2)"
 */
 by sorry
 
 lemma Auto_RkFixesEcdhSS [reuse, use_induction,
-                          hide_lemma=Auto_MyKemKeyOrigin,
-                          hide_lemma=Auto_MaybeNewKemKeyOrigin,
+                          hide_lemma=Auto_MyKemKeyOrigin, hide_lemma=Auto_MaybeNewKemKeyOrigin,
                           hide_lemma=Auto_TheirKemKeyOrigin, hide_lemma=Auto_KemSSOrigin,
-                          hide_lemma=Auto_KemKeyOriginEncap,
-                          hide_lemma=Auto_KemKeyOriginDecap, hide_lemma=RkFixesKEMSS,
-                          hide_lemma=ECDHSSCompromise]:
+                          hide_lemma=Auto_KemKeyOriginEncap, hide_lemma=Auto_KemKeyOriginDecap,
+                          hide_lemma=RkFixesKEMSS, hide_lemma=ECDHSSCompromise]:
   all-traces
-  "∀ rk ecdhSS1 ecdhSS2 a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2
-     f2 g2 h2 i2 j2 id1 li1 me1 them1 id2 li2 me2 them2 #t1 #t2.
+  "∀ rk ecdhSS1 ecdhSS2 a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2
+     h2 i2 j2 id1 li1 me1 them1 id2 li2 me2 them2 #t1 #t2.
     ((((SessionInfo( id1, li1, me1, them1 ) @ #t1) ∧
        (KeysUsed( a1, b1, c1, ecdhSS1, d1, e1, f1, g1, h1, rk, i1, j1
         ) @ #t1)) ∧
@@ -67526,14 +67394,12 @@ lemma Auto_RkFixesEcdhSS [reuse, use_induction,
     (ecdhSS1 = ecdhSS2)"
 /*
 guarded formula characterizing all counter-examples:
-"∃ rk ecdhSS1 ecdhSS2 a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2
-   f2 g2 h2 i2 j2 id1 li1 me1 them1 id2 li2 me2 them2 #t1 #t2.
+"∃ rk ecdhSS1 ecdhSS2 a1 b1 c1 d1 e1 f1 g1 h1 i1 j1 a2 b2 c2 d2 e2 f2 g2
+   h2 i2 j2 id1 li1 me1 them1 id2 li2 me2 them2 #t1 #t2.
   (SessionInfo( id1, li1, me1, them1 ) @ #t1) ∧
-  (KeysUsed( a1, b1, c1, ecdhSS1, d1, e1, f1, g1, h1, rk, i1, j1
-   ) @ #t1) ∧
+  (KeysUsed( a1, b1, c1, ecdhSS1, d1, e1, f1, g1, h1, rk, i1, j1 ) @ #t1) ∧
   (SessionInfo( id2, li2, me2, them2 ) @ #t2) ∧
-  (KeysUsed( a2, b2, c2, ecdhSS2, d2, e2, f2, g2, h2, rk, i2, j2
-   ) @ #t2)
+  (KeysUsed( a2, b2, c2, ecdhSS2, d2, e2, f2, g2, h2, rk, i2, j2 ) @ #t2)
  ∧
   ¬(ecdhSS1 = ecdhSS2)"
 */
@@ -67541,14 +67407,13 @@ by sorry
 
 lemma KemSSCompromise [reuse, hide_lemma=ECDHSSCompromise,
                        hide_lemma=Auto_ECDHSkOrigin, hide_lemma=Auto_MyKemKeyOrigin,
-                       hide_lemma=Auto_MaybeNewKemKeyOrigin,
-                       hide_lemma=Auto_TheirKemKeyOrigin]:
+                       hide_lemma=Auto_MaybeNewKemKeyOrigin, hide_lemma=Auto_TheirKemKeyOrigin]:
   all-traces
-  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-     maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
+  "∀ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+     maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
     (((SessionInfo( id, i, me, them ) @ #t1) ∧
-      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-                 maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+                 maybeNewKemPk, kemSS, encapPk, rk, ck, mk
        ) @ #t1)) ∧
      (!KU( kemSS ) @ #t2)) ⇒
     (((((∃ #x. RevealKemKey( me, encapPk ) @ #x) ∨
@@ -67558,11 +67423,11 @@ lemma KemSSCompromise [reuse, hide_lemma=ECDHSSCompromise,
      (∃ #x. (RevealIdentityKey( them ) @ #x) ∧ (#x < #t1)))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk
-   maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
+"∃ id i me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+   maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
   (SessionInfo( id, i, me, them ) @ #t1) ∧
-  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+             maybeNewKemPk, kemSS, encapPk, rk, ck, mk
    ) @ #t1) ∧
   (!KU( kemSS ) @ #t2)
  ∧
@@ -67574,17 +67439,16 @@ guarded formula characterizing all counter-examples:
 */
 by sorry
 
-lemma CkCompromise [reuse, use_induction,
-                    hide_lemma=Auto_ECDHSkOrigin, hide_lemma=Auto_MyKemKeyOrigin,
-                    hide_lemma=Auto_MaybeNewKemKeyOrigin,
+lemma CkCompromise [reuse, use_induction, hide_lemma=Auto_ECDHSkOrigin,
+                    hide_lemma=Auto_MyKemKeyOrigin, hide_lemma=Auto_MaybeNewKemKeyOrigin,
                     hide_lemma=Auto_TheirKemKeyOrigin, hide_lemma=KemKeyOrigin,
                     hide_lemma=Auto_KemSSOrigin, hide_lemma=ECDHSSCompromise]:
   all-traces
-  "∀ id li me them theirIdPk myPk theirPk ecdhSS myKemPk
-     maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
+  "∀ id li me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+     maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
     (((SessionInfo( id, li, me, them ) @ #t1) ∧
-      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-                 maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+      (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+                 maybeNewKemPk, kemSS, encapPk, rk, ck, mk
        ) @ #t1)) ∧
      (!KU( ck ) @ #t2)) ⇒
     (((∃ ckC #x.
@@ -67594,20 +67458,18 @@ lemma CkCompromise [reuse, use_induction,
      (∃ rkCK #x. (rk = prefix(rkCK)) ∧ (!KU( rkCK ) @ #x)))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id li me them theirIdPk myPk theirPk ecdhSS myKemPk
-   maybeTheirKemPk maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
+"∃ id li me them theirIdPk myPk theirPk ecdhSS myKemPk maybeTheirKemPk
+   maybeNewKemPk kemSS encapPk rk ck mk #t1 #t2.
   (SessionInfo( id, li, me, them ) @ #t1) ∧
-  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk,
-             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, rk, ck, mk
+  (KeysUsed( theirIdPk, myPk, theirPk, ecdhSS, myKemPk, maybeTheirKemPk,
+             maybeNewKemPk, kemSS, encapPk, rk, ck, mk
    ) @ #t1) ∧
   (!KU( ck ) @ #t2)
  ∧
   (∀ ckC #x.
     (RevealChainKey( me, ckC ) @ #x) ⇒ (¬(ckC ⊏ ck)) ∧ (¬(ckC = ck))) ∧
   (∀ ckC #x.
-    (RevealChainKey( them, ckC ) @ #x)
-   ⇒
-    (¬(ckC ⊏ ck)) ∧ (¬(ckC = ck))) ∧
+    (RevealChainKey( them, ckC ) @ #x) ⇒ (¬(ckC ⊏ ck)) ∧ (¬(ckC = ck))) ∧
   (∀ rkCK #x. (rk = prefix(rkCK)) ∧ (!KU( rkCK ) @ #x) ⇒ ⊥)"
 */
 by sorry
@@ -67628,19 +67490,16 @@ by sorry
 
 lemma Auto_RkSecretCompromiseECDH [reuse, hide_lemma=CkCompromise,
                                    hide_lemma=Auto_SessionStart, hide_lemma=Auto_ECDHSkOrigin,
-                                   hide_lemma=Auto_MyKemKeyOrigin,
-                                   hide_lemma=Auto_MaybeNewKemKeyOrigin,
+                                   hide_lemma=Auto_MyKemKeyOrigin, hide_lemma=Auto_MaybeNewKemKeyOrigin,
                                    hide_lemma=Auto_TheirKemKeyOrigin, hide_lemma=Auto_KemSSOrigin,
-                                   hide_lemma=Auto_KemKeyOriginEncap,
-                                   hide_lemma=Auto_KemKeyOriginDecap, hide_lemma=KemSSCompromise,
-                                   hide_lemma=ECDHSSCompromise]:
+                                   hide_lemma=Auto_KemKeyOriginEncap, hide_lemma=Auto_KemKeyOriginDecap,
+                                   hide_lemma=KemSSCompromise, hide_lemma=ECDHSSCompromise]:
   all-traces
   "∀ id li me them theirIdPk myEcdhPk theirEcdhPk ecdhSS myKemPk
      maybeTheirKemPk maybeNewKemPk kemSS encapPk rkCK ck mk #t1 #t2.
     (((SessionInfo( id, li, me, them ) @ #t1) ∧
       (KeysUsed( theirIdPk, myEcdhPk, theirEcdhPk, ecdhSS, myKemPk,
-                 maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck,
-                 mk
+                 maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck, mk
        ) @ #t1)) ∧
      (!KU( rkCK ) @ #t2)) ⇒
     (((∃ #x. RevealChainKey( me, suffix(rkCK) ) @ #x) ∨
@@ -67652,8 +67511,7 @@ guarded formula characterizing all counter-examples:
    maybeTheirKemPk maybeNewKemPk kemSS encapPk rkCK ck mk #t1 #t2.
   (SessionInfo( id, li, me, them ) @ #t1) ∧
   (KeysUsed( theirIdPk, myEcdhPk, theirEcdhPk, ecdhSS, myKemPk,
-             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck,
-             mk
+             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck, mk
    ) @ #t1) ∧
   (!KU( rkCK ) @ #t2)
  ∧
@@ -67664,14 +67522,11 @@ guarded formula characterizing all counter-examples:
 by sorry
 
 lemma Auto_RkSecretCompromiseKemSS [reuse, use_induction,
-                                    hide_lemma=Auto_SessionStart,
-                                    hide_lemma=Auto_SessionStartUnique,
+                                    hide_lemma=Auto_SessionStart, hide_lemma=Auto_SessionStartUnique,
                                     hide_lemma=Auto_ECDHSkOrigin, hide_lemma=ECDHSSCompromise,
-                                    hide_lemma=Auto_MyKemKeyOrigin,
-                                    hide_lemma=Auto_MaybeNewKemKeyOrigin,
+                                    hide_lemma=Auto_MyKemKeyOrigin, hide_lemma=Auto_MaybeNewKemKeyOrigin,
                                     hide_lemma=Auto_TheirKemKeyOrigin, hide_lemma=Auto_KemSSOrigin,
-                                    hide_lemma=Auto_KemKeyOriginEncap,
-                                    hide_lemma=Auto_KemKeyOriginDecap,
+                                    hide_lemma=Auto_KemKeyOriginEncap, hide_lemma=Auto_KemKeyOriginDecap,
                                     hide_lemma=Auto_RkFixesEcdhSS, hide_lemma=CkCompromise,
                                     hide_lemma=Auto_RkSecretCompromiseECDH]:
   all-traces
@@ -67679,34 +67534,53 @@ lemma Auto_RkSecretCompromiseKemSS [reuse, use_induction,
      maybeTheirKemPk maybeNewKemPk kemSS encapPk rkCK ck mk #t1 #t2.
     (((SessionInfo( id, li, me, them ) @ #t1) ∧
       (KeysUsed( theirIdPk, myEcdhPk, theirEcdhPk, ecdhSS, myKemPk,
-                 maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck,
-                 mk
+                 maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck, mk
        ) @ #t1)) ∧
      (!KU( rkCK ) @ #t2)) ⇒
-    (((∃ #x. !KU( kemSS ) @ #x) ∨
-      (∃ rk #x. RevealRootKey( me, kemSS, rk ) @ #x)) ∨
-     (∃ rk #x. RevealRootKey( them, kemSS, rk ) @ #x))"
+    (((((∃ #x. !KU( kemSS ) @ #x) ∨
+        (∃ rk #x. (RevealRootKey( me, kemSS, rk ) @ #x) ∧ (rk ⊏ prefix(rkCK)))) ∨
+       (∃ rk #x.
+         (RevealRootKey( them, kemSS, rk ) @ #x) ∧ (rk ⊏ prefix(rkCK)))) ∨
+      ((∃ ckC #x. (RevealChainKey( me, ckC ) @ #x) ∧ (ckC = suffix(rkCK))) ∧
+       ((∃ rk #x. (RevealRootKey( me, kemSS, rk ) @ #x) ∧ (rk = prefix(rkCK))) ∨
+        (∃ rk #x.
+          (RevealRootKey( them, kemSS, rk ) @ #x) ∧ (rk = prefix(rkCK)))))) ∨
+     ((∃ ckC #x. (RevealChainKey( them, ckC ) @ #x) ∧ (ckC = suffix(rkCK))) ∧
+      ((∃ rk #x. (RevealRootKey( me, kemSS, rk ) @ #x) ∧ (rk = prefix(rkCK))) ∨
+       (∃ rk #x.
+         (RevealRootKey( them, kemSS, rk ) @ #x) ∧ (rk = prefix(rkCK))))))"
 /*
 guarded formula characterizing all counter-examples:
 "∃ id li me them theirIdPk myEcdhPk theirEcdhPk ecdhSS myKemPk
    maybeTheirKemPk maybeNewKemPk kemSS encapPk rkCK ck mk #t1 #t2.
   (SessionInfo( id, li, me, them ) @ #t1) ∧
   (KeysUsed( theirIdPk, myEcdhPk, theirEcdhPk, ecdhSS, myKemPk,
-             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck,
-             mk
+             maybeTheirKemPk, maybeNewKemPk, kemSS, encapPk, prefix(rkCK), ck, mk
    ) @ #t1) ∧
   (!KU( rkCK ) @ #t2)
  ∧
   (∀ #x. (!KU( kemSS ) @ #x) ⇒ ⊥) ∧
-  (∀ rk #x. (RevealRootKey( me, kemSS, rk ) @ #x) ⇒ ⊥) ∧
-  (∀ rk #x. (RevealRootKey( them, kemSS, rk ) @ #x) ⇒ ⊥)"
+  (∀ rk #x. (RevealRootKey( me, kemSS, rk ) @ #x) ⇒ ¬(rk ⊏ prefix(rkCK))) ∧
+  (∀ rk #x.
+    (RevealRootKey( them, kemSS, rk ) @ #x) ⇒ ¬(rk ⊏ prefix(rkCK))) ∧
+  (((∀ ckC #x.
+      (RevealChainKey( me, ckC ) @ #x) ∧ (ckC = suffix(rkCK)) ⇒ ⊥) ∨
+    ((∀ rk #x.
+       (RevealRootKey( me, kemSS, rk ) @ #x) ∧ (rk = prefix(rkCK)) ⇒ ⊥) ∧
+     (∀ rk #x.
+       (RevealRootKey( them, kemSS, rk ) @ #x) ∧ (rk = prefix(rkCK)) ⇒ ⊥)))) ∧
+  (((∀ ckC #x.
+      (RevealChainKey( them, ckC ) @ #x) ∧ (ckC = suffix(rkCK)) ⇒ ⊥) ∨
+    ((∀ rk #x.
+       (RevealRootKey( me, kemSS, rk ) @ #x) ∧ (rk = prefix(rkCK)) ⇒ ⊥) ∧
+     (∀ rk #x.
+       (RevealRootKey( them, kemSS, rk ) @ #x) ∧ (rk = prefix(rkCK)) ⇒ ⊥))))"
 */
 by sorry
 
 lemma Auto_ChainKeyMonotonicity2 [reuse, use_induction,
                                   hide_lemma=Auto_SessionStart, hide_lemma=Auto_SessionStartUnique,
-                                  hide_lemma=Auto_RootKeyConnectionSend,
-                                  hide_lemma=Auto_ECDHSkOrigin,
+                                  hide_lemma=Auto_RootKeyConnectionSend, hide_lemma=Auto_ECDHSkOrigin,
                                   hide_lemma=Auto_RootKeyConnectionReceive,
                                   hide_lemma=Auto_RootKeyMonotonicity, hide_lemma=ECDHSSCompromise]:
   all-traces
@@ -67722,23 +67596,20 @@ guarded formula characterizing all counter-examples:
 */
 by sorry
 
-lemma MkCompromise [reuse, use_induction,
-                    hide_lemma=Auto_SessionStart, hide_lemma=Auto_SessionStartUnique,
-                    hide_lemma=Auto_ECDHSkOrigin,
-                    hide_lemma=Auto_RootKeyConnectionSend,
-                    hide_lemma=Auto_RootKeyConnectionReceive,
-                    hide_lemma=ECDHSSCompromise, hide_lemma=Auto_MyKemKeyOrigin,
-                    hide_lemma=Auto_MaybeNewKemKeyOrigin,
-                    hide_lemma=Auto_TheirKemKeyOrigin, hide_lemma=Auto_KemSSOrigin,
-                    hide_lemma=Auto_KemKeyOriginEncap,
-                    hide_lemma=Auto_KemKeyOriginDecap, hide_lemma=KemSSCompromise,
-                    hide_lemma=CkCompromise, hide_lemma=Auto_RkSecretCompromiseECDH,
-                    hide_lemma=Auto_RkSecretCompromiseKemSS]:
+lemma Auto_MkCompromise [reuse, use_induction,
+                         hide_lemma=Auto_SessionStart, hide_lemma=Auto_SessionStartUnique,
+                         hide_lemma=Auto_ECDHSkOrigin, hide_lemma=ECDHSSCompromise,
+                         hide_lemma=Auto_MyKemKeyOrigin, hide_lemma=Auto_MaybeNewKemKeyOrigin,
+                         hide_lemma=Auto_TheirKemKeyOrigin, hide_lemma=Auto_KemSSOrigin,
+                         hide_lemma=Auto_KemKeyOriginEncap, hide_lemma=Auto_KemKeyOriginDecap,
+                         hide_lemma=KemSSCompromise, hide_lemma=CkCompromise,
+                         hide_lemma=Auto_RkSecretCompromiseECDH,
+                         hide_lemma=Auto_RkSecretCompromiseKemSS]:
   all-traces
-  "∀ id sentI me them myEcdhPk theirEcdhPk kemSS encapPk chainKey
-     msgKey #t1 #t2.
+  "∀ id sentI me them myEcdhPk theirEcdhPk kemSS encapPk rk chainKey msgKey
+     #t1 #t2.
     (((SessionInfo( id, sentI, me, them ) @ #t1) ∧
-      (SessionSecrets( myEcdhPk, theirEcdhPk, kemSS, encapPk, chainKey,
+      (SessionSecrets( myEcdhPk, theirEcdhPk, kemSS, encapPk, rk, chainKey,
                        msgKey
        ) @ #t1)) ∧
      (!KU( msgKey ) @ #t2)) ⇒
@@ -67747,10 +67618,10 @@ lemma MkCompromise [reuse, use_induction,
      (∃ #x. RevealMessageKey( them, msgKey ) @ #x))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id sentI me them myEcdhPk theirEcdhPk kemSS encapPk chainKey
-   msgKey #t1 #t2.
+"∃ id sentI me them myEcdhPk theirEcdhPk kemSS encapPk rk chainKey msgKey
+   #t1 #t2.
   (SessionInfo( id, sentI, me, them ) @ #t1) ∧
-  (SessionSecrets( myEcdhPk, theirEcdhPk, kemSS, encapPk, chainKey,
+  (SessionSecrets( myEcdhPk, theirEcdhPk, kemSS, encapPk, rk, chainKey,
                    msgKey
    ) @ #t1) ∧
   (!KU( msgKey ) @ #t2)
@@ -67764,17 +67635,15 @@ by sorry
 lemma Auto_Secrecy [hide_lemma=Auto_SessionStart,
                     hide_lemma=Auto_SessionStartUnique, hide_lemma=Auto_ECDHSkOrigin,
                     hide_lemma=Auto_RootKeyConnectionSend,
-                    hide_lemma=Auto_RootKeyConnectionReceive,
-                    hide_lemma=Auto_MyKemKeyOrigin,
-                    hide_lemma=Auto_MaybeNewKemKeyOrigin,
-                    hide_lemma=Auto_TheirKemKeyOrigin, hide_lemma=Auto_KemSSOrigin,
-                    hide_lemma=Auto_KemKeyOriginEncap,
+                    hide_lemma=Auto_RootKeyConnectionReceive, hide_lemma=Auto_MyKemKeyOrigin,
+                    hide_lemma=Auto_MaybeNewKemKeyOrigin, hide_lemma=Auto_TheirKemKeyOrigin,
+                    hide_lemma=Auto_KemSSOrigin, hide_lemma=Auto_KemKeyOriginEncap,
                     hide_lemma=Auto_KemKeyOriginDecap]:
   all-traces
-  "∀ id sentI me them msg myEcdhPk theirEcdhPk kemSS encapPk chainKey
+  "∀ id sentI me them msg myEcdhPk theirEcdhPk kemSS encapPk rk chainKey
      msgKey #t.
     ((MessageSent( id, sentI, me, them, msg ) @ #t) ∧
-     (SessionSecrets( myEcdhPk, theirEcdhPk, kemSS, encapPk, chainKey,
+     (SessionSecrets( myEcdhPk, theirEcdhPk, kemSS, encapPk, rk, chainKey,
                       msgKey
       ) @ #t)) ⇒
     (((((((¬(∃ #x. K( msg ) @ #x)) ∨
@@ -67795,14 +67664,14 @@ lemma Auto_Secrecy [hide_lemma=Auto_SessionStart,
            (∃ #x. RevealKemKey( them, encapPk ) @ #x)) ∨
           (∃ #x. RevealKemPreKey( me, encapPk ) @ #x)) ∨
          (∃ #x. RevealKemPreKey( them, encapPk ) @ #x)) ∨
-        (∃ rk #x. RevealRootKey( me, kemSS, rk ) @ #x)) ∨
-       (∃ rk #x. RevealRootKey( them, kemSS, rk ) @ #x))))"
+        (∃ rkC #x. (RevealRootKey( me, kemSS, rkC ) @ #x) ∧ (rkC ⊏ rk))) ∨
+       (∃ rkC #x. (RevealRootKey( them, kemSS, rkC ) @ #x) ∧ (rkC ⊏ rk)))))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id sentI me them msg myEcdhPk theirEcdhPk kemSS encapPk chainKey
+"∃ id sentI me them msg myEcdhPk theirEcdhPk kemSS encapPk rk chainKey
    msgKey #t.
   (MessageSent( id, sentI, me, them, msg ) @ #t) ∧
-  (SessionSecrets( myEcdhPk, theirEcdhPk, kemSS, encapPk, chainKey,
+  (SessionSecrets( myEcdhPk, theirEcdhPk, kemSS, encapPk, rk, chainKey,
                    msgKey
    ) @ #t)
  ∧
@@ -67826,29 +67695,27 @@ guarded formula characterizing all counter-examples:
      (∀ #x. (RevealKemKey( them, encapPk ) @ #x) ⇒ ⊥) ∧
      (∀ #x. (RevealKemPreKey( me, encapPk ) @ #x) ⇒ ⊥) ∧
      (∀ #x. (RevealKemPreKey( them, encapPk ) @ #x) ⇒ ⊥) ∧
-     (∀ rk #x. (RevealRootKey( me, kemSS, rk ) @ #x) ⇒ ⊥) ∧
-     (∀ rk #x. (RevealRootKey( them, kemSS, rk ) @ #x) ⇒ ⊥))))"
+     (∀ rkC #x. (RevealRootKey( me, kemSS, rkC ) @ #x) ⇒ ¬(rkC ⊏ rk)) ∧
+     (∀ rkC #x. (RevealRootKey( them, kemSS, rkC ) @ #x) ⇒ ¬(rkC ⊏ rk)))))"
 */
 by sorry
 
 lemma Auto_NoninjectiveAgreement [hide_lemma=Auto_SessionStartUnique,
-                                  hide_lemma=Auto_ECDHSkOrigin,
-                                  hide_lemma=Auto_RootKeyConnectionSend,
+                                  hide_lemma=Auto_ECDHSkOrigin, hide_lemma=Auto_RootKeyConnectionSend,
                                   hide_lemma=Auto_RootKeyConnectionReceive,
                                   hide_lemma=Auto_RootKeyMonotonicity,
                                   hide_lemma=Auto_ChainKeyMonotonicity,
                                   hide_lemma=Auto_RootKeyConnectionInjectivity,
                                   hide_lemma=Auto_MkCkRelation, hide_lemma=Auto_CkRkRelation,
                                   hide_lemma=ECDHSSCompromise, hide_lemma=Auto_MyKemKeyOrigin,
-                                  hide_lemma=Auto_MaybeNewKemKeyOrigin,
-                                  hide_lemma=Auto_TheirKemKeyOrigin, hide_lemma=Auto_KemSSOrigin,
-                                  hide_lemma=Auto_KemKeyOriginEncap,
+                                  hide_lemma=Auto_MaybeNewKemKeyOrigin, hide_lemma=Auto_TheirKemKeyOrigin,
+                                  hide_lemma=Auto_KemSSOrigin, hide_lemma=Auto_KemKeyOriginEncap,
                                   hide_lemma=Auto_KemKeyOriginDecap, hide_lemma=KemSSCompromise,
                                   hide_lemma=CkCompromise, hide_lemma=Auto_Secrecy,
                                   hide_lemma=RkFixesKEMSS, hide_lemma=Auto_RkFixesEcdhSS,
                                   hide_lemma=Auto_RkFormat, hide_lemma=Auto_RkSecretCompromiseECDH,
                                   hide_lemma=Auto_RkSecretCompromiseKemSS,
-                                  hide_lemma=Auto_ChainKeyMonotonicity2, hide_lemma=MkCompromise]:
+                                  hide_lemma=Auto_ChainKeyMonotonicity2, hide_lemma=Auto_MkCompromise]:
   all-traces
   "∀ id i s r m #t.
     (MessageReceived( id, i, s, r, m ) @ #t) ⇒
@@ -67864,27 +67731,26 @@ guarded formula characterizing all counter-examples:
 */
 by sorry
 
-lemma InjectiveMessageReceived [hide_lemma=ECDHSSCompromise,
-                                hide_lemma=Auto_MyKemKeyOrigin,
-                                hide_lemma=Auto_MaybeNewKemKeyOrigin,
-                                hide_lemma=Auto_TheirKemKeyOrigin, hide_lemma=Auto_KemSSOrigin,
-                                hide_lemma=Auto_KemKeyOriginEncap,
-                                hide_lemma=Auto_KemKeyOriginDecap, hide_lemma=KemSSCompromise,
-                                hide_lemma=CkCompromise, hide_lemma=Auto_Secrecy,
-                                hide_lemma=RkFixesKEMSS, hide_lemma=Auto_RkFixesEcdhSS,
-                                hide_lemma=Auto_RkFormat, hide_lemma=Auto_RkSecretCompromiseECDH,
-                                hide_lemma=Auto_RkSecretCompromiseKemSS,
-                                hide_lemma=Auto_ChainKeyMonotonicity2, hide_lemma=MkCompromise]:
+lemma Auto_InjectiveMessageReceived [hide_lemma=ECDHSSCompromise,
+                                     hide_lemma=Auto_MyKemKeyOrigin, hide_lemma=Auto_MaybeNewKemKeyOrigin,
+                                     hide_lemma=Auto_TheirKemKeyOrigin, hide_lemma=Auto_KemSSOrigin,
+                                     hide_lemma=Auto_KemKeyOriginEncap, hide_lemma=Auto_KemKeyOriginDecap,
+                                     hide_lemma=KemSSCompromise, hide_lemma=CkCompromise,
+                                     hide_lemma=Auto_Secrecy, hide_lemma=RkFixesKEMSS,
+                                     hide_lemma=Auto_RkFixesEcdhSS, hide_lemma=Auto_RkFormat,
+                                     hide_lemma=Auto_RkSecretCompromiseECDH,
+                                     hide_lemma=Auto_RkSecretCompromiseKemSS,
+                                     hide_lemma=Auto_ChainKeyMonotonicity2, hide_lemma=Auto_MkCompromise]:
   all-traces
-  "∀ id1 id2 i1 i2 s1 s2 r1 r2 m rEcdhPk1 sEcdhPk1 kemSS1 encapPk1
-     chainKey1 msgKey1 rEcdhPk2 sEcdhPk2 kemSS2 encapPk2 chainKey2
-     msgKey2 #t1 #t2.
+  "∀ id1 id2 i1 i2 s1 s2 r1 r2 m rEcdhPk1 sEcdhPk1 kemSS1 encapPk1 rk1
+     chainKey1 msgKey1 rEcdhPk2 sEcdhPk2 kemSS2 encapPk2 rk2 chainKey2 msgKey2
+     #t1 #t2.
     ((((MessageReceived( id1, i1, s1, r1, m ) @ #t1) ∧
-       (SessionSecrets( rEcdhPk1, sEcdhPk1, kemSS1, encapPk1, chainKey1,
+       (SessionSecrets( rEcdhPk1, sEcdhPk1, kemSS1, encapPk1, rk1, chainKey1,
                         msgKey1
         ) @ #t1)) ∧
       (MessageReceived( id2, i2, s2, r2, m ) @ #t2)) ∧
-     (SessionSecrets( rEcdhPk2, sEcdhPk2, kemSS2, encapPk2, chainKey2,
+     (SessionSecrets( rEcdhPk2, sEcdhPk2, kemSS2, encapPk2, rk2, chainKey2,
                       msgKey2
       ) @ #t2)) ⇒
     ((((#t1 = #t2) ∨
@@ -67895,15 +67761,15 @@ lemma InjectiveMessageReceived [hide_lemma=ECDHSSCompromise,
      (∃ #x. (RevealIdentityKey( s2 ) @ #x) ∧ (#x < #t2)))"
 /*
 guarded formula characterizing all counter-examples:
-"∃ id1 id2 i1 i2 s1 s2 r1 r2 m rEcdhPk1 sEcdhPk1 kemSS1 encapPk1
-   chainKey1 msgKey1 rEcdhPk2 sEcdhPk2 kemSS2 encapPk2 chainKey2
-   msgKey2 #t1 #t2.
+"∃ id1 id2 i1 i2 s1 s2 r1 r2 m rEcdhPk1 sEcdhPk1 kemSS1 encapPk1 rk1
+   chainKey1 msgKey1 rEcdhPk2 sEcdhPk2 kemSS2 encapPk2 rk2 chainKey2 msgKey2
+   #t1 #t2.
   (MessageReceived( id1, i1, s1, r1, m ) @ #t1) ∧
-  (SessionSecrets( rEcdhPk1, sEcdhPk1, kemSS1, encapPk1, chainKey1,
+  (SessionSecrets( rEcdhPk1, sEcdhPk1, kemSS1, encapPk1, rk1, chainKey1,
                    msgKey1
    ) @ #t1) ∧
   (MessageReceived( id2, i2, s2, r2, m ) @ #t2) ∧
-  (SessionSecrets( rEcdhPk2, sEcdhPk2, kemSS2, encapPk2, chainKey2,
+  (SessionSecrets( rEcdhPk2, sEcdhPk2, kemSS2, encapPk2, rk2, chainKey2,
                    msgKey2
    ) @ #t2)
  ∧
@@ -67964,10 +67830,10 @@ by sorry
 
 /*
 Generated from:
-Tamarin version 1.9.0
-Maude version 3.1
-Git revision: beb4f036c2d4d4e787f9486487b2e52ae2ccf307, branch: develop
-Compiled at: 2024-06-17 09:14:51.274432958 UTC
+Tamarin version 1.10.0
+Maude version 3.2.1
+Git revision: UNKNOWN, branch: UNKNOWN
+Compiled at: 2024-10-30 13:42:18.081591 UTC
 */
 
 end
