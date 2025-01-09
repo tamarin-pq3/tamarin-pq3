@@ -20,7 +20,7 @@ We used Tamarin version 1.8.0 and Maude versions 3.1 and 3.2.1.
 | `/oracle.py` | A custom proof heuristic aiding proof construction. |
 | `/prove-auto.sh` | A script that constructs proves for all automatically provable lemmas. |
 | `/time.sh` | A script used for timing proof construction/verification. |
-| `/wellformedness.sh` | A that checks that our model is well-formed. To keep things separate, all other proof checking/constructing scripts skip some well-formedness checks. |
+| `/wellformedness.sh` | A script that checks that our model is well-formed. To keep things separate, all other proof checking/constructing scripts skip some well-formedness checks. |
 
 ## Constructing & Checking Proofs
 
@@ -38,3 +38,12 @@ You can construct all automatically provable lemmas by running:
 Some lemmas are not automatically provable (those not prefixed by `Auto_`).
 We provide already constructed proofs for these lemmas in `/proofs`.
 See the README in that folder for more information on how to verify these proofs.
+
+## Proof Complexity
+
+Proofs were constructed on a server with 252 GB of memory and two Intel Xeon E5-2650 v4 CPUs, i.e., a 48-thread server.
+Some of the proofs can take up to three days to construct or verify, and we observed peak RAM usage of around 150 GB.
+These are not exact numbers.
+
+Note that Tamarin can use RAM inefficiently, and memory compression can bring you a long way.
+During proof development, proofs were also constructed on a Macbook with 32 GB of RAM, and we often observed 100 GB of virtual memory usage but only 5-10 GB of physical memory usage.
