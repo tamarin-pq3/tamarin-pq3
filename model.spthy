@@ -722,7 +722,7 @@ lemma Auto_RkSecretCompromiseECDH[reuse,hide_lemma=CkCompromise,hide_lemma=Auto_
         | (Ex #x. RevealChainKey(them, suffix(rkCK)) @ #x)
         | (Ex #x. !KU(ecdhSS) @ #x))"
 
-lemma Auto_RkSecretCompromiseKemSS[reuse,use_induction,hide_lemma=Auto_SessionStart,hide_lemma=Auto_SessionStartUnique,
+lemma Expensive_Auto_RkSecretCompromiseKemSS[reuse,use_induction,hide_lemma=Auto_SessionStart,hide_lemma=Auto_SessionStartUnique,
   hide_lemma=Auto_ECDHSkOrigin,hide_lemma=ECDHSSCompromise,hide_lemma=Auto_MyKemKeyOrigin,
   hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=Auto_KemSSOrigin,
   hide_lemma=Auto_KemKeyOriginEncap,hide_lemma=Auto_KemKeyOriginDecap,hide_lemma=Auto_RkFixesEcdhSS,
@@ -767,7 +767,7 @@ lemma Auto_MkCompromise[reuse,use_induction,hide_lemma=Auto_SessionStart,hide_le
   hide_lemma=Auto_ECDHSkOrigin,hide_lemma=ECDHSSCompromise,hide_lemma=Auto_MyKemKeyOrigin,
   hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=Auto_KemSSOrigin,
   hide_lemma=Auto_KemKeyOriginEncap,hide_lemma=Auto_KemKeyOriginDecap,hide_lemma=KemSSCompromise,
-  hide_lemma=CkCompromise,hide_lemma=Auto_RkSecretCompromiseECDH,hide_lemma=Auto_RkSecretCompromiseKemSS]:
+  hide_lemma=CkCompromise,hide_lemma=Auto_RkSecretCompromiseECDH,hide_lemma=Expensive_Auto_RkSecretCompromiseKemSS]:
   "All id sentI me them myEcdhPk theirEcdhPk kemSS encapPk rk chainKey msgKey #t1 #t2.
         ( SessionInfo(id, sentI, me, them) @ #t1
         & SessionSecrets(myEcdhPk, theirEcdhPk, kemSS, encapPk, rk, chainKey, msgKey) @ #t1
@@ -822,7 +822,7 @@ lemma Auto_NoninjectiveAgreement[hide_lemma=Auto_SessionStartUnique,hide_lemma=A
   hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin,hide_lemma=Auto_KemSSOrigin,
   hide_lemma=Auto_KemKeyOriginEncap,hide_lemma=Auto_KemKeyOriginDecap,hide_lemma=KemSSCompromise,
   hide_lemma=CkCompromise,hide_lemma=Auto_Secrecy,hide_lemma=RkFixesKEMSS,hide_lemma=Auto_RkFixesEcdhSS,
-  hide_lemma=Auto_RkFormat,hide_lemma=Auto_RkSecretCompromiseECDH,hide_lemma=Auto_RkSecretCompromiseKemSS,
+  hide_lemma=Auto_RkFormat,hide_lemma=Auto_RkSecretCompromiseECDH,hide_lemma=Expensive_Auto_RkSecretCompromiseKemSS,
   hide_lemma=Auto_ChainKeyMonotonicity2,hide_lemma=Auto_MkCompromise]:
   "All id i s r m ad #t.
         MessageReceived(id, i, s, r, m, ad) @ #t
@@ -833,7 +833,7 @@ lemma Auto_InjectiveMessageReceived[hide_lemma=ECDHSSCompromise,
   hide_lemma=Auto_MyKemKeyOrigin,hide_lemma=Auto_MaybeNewKemKeyOrigin,hide_lemma=Auto_TheirKemKeyOrigin,
   hide_lemma=Auto_KemSSOrigin,hide_lemma=Auto_KemKeyOriginEncap,hide_lemma=Auto_KemKeyOriginDecap,
   hide_lemma=KemSSCompromise,hide_lemma=CkCompromise,hide_lemma=Auto_Secrecy,hide_lemma=RkFixesKEMSS,hide_lemma=Auto_RkFixesEcdhSS,
-  hide_lemma=Auto_RkFormat,hide_lemma=Auto_RkSecretCompromiseECDH,hide_lemma=Auto_RkSecretCompromiseKemSS,
+  hide_lemma=Auto_RkFormat,hide_lemma=Auto_RkSecretCompromiseECDH,hide_lemma=Expensive_Auto_RkSecretCompromiseKemSS,
   hide_lemma=Auto_ChainKeyMonotonicity2,hide_lemma=Auto_MkCompromise]:
   "All id1 id2 i1 i2 s1 s2 r1 r2 m ad rEcdhPk1 sEcdhPk1 kemSS1 encapPk1 rk1 chainKey1
       msgKey1 rEcdhPk2 sEcdhPk2 kemSS2 encapPk2 rk2 chainKey2 msgKey2 #t1 #t2.

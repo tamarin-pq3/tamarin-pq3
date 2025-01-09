@@ -213,7 +213,7 @@ elif argv[1] == 'Auto_RkSecretCompromiseECDH':
       Token('SessionInfo', max=-1),
     ]),
   )
-elif argv[1] == 'Auto_RkSecretCompromiseKemSS':
+elif argv[1] == 'Expensive_Auto_RkSecretCompromiseKemSS':
   match = partial(compose,
     # Filter out where the adversary knows the message key indicator from; this
     # is public and does nothing.
