@@ -19,8 +19,6 @@ equations:
 
 
 
-heuristic: O "./oracle.py"
-
 /* looping facts with injective instances: Session/15 */
 
 restriction Eq:
