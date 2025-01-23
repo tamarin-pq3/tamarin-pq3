@@ -19,6 +19,7 @@ We used Tamarin version 1.8.0 and Maude versions 3.1 and 3.2.1.
 | `/model.spthy` | Our formal model of iMessage PQ3. |
 | `/oracle.py` | A custom proof heuristic aiding proof construction. |
 | `/prove-auto.sh` | A script that constructs proves for all automatically provable lemmas. |
+| `/prove-expensive.sh` | A script that constructs the proof for an automatically provable but computationally expensive lemma. |
 | `/time.sh` | A script used for timing proof construction/verification. |
 | `/wellformedness.sh` | A script that checks that our model is well-formed. To keep things separate, all other proof checking/constructing scripts skip some well-formedness checks. |
 
@@ -30,12 +31,19 @@ You can verify that our model has no well-formedness issues by running:
 ./wellformedness.sh
 ```
 
-You can construct all automatically provable lemmas by running:
+You can construct most automatically provable lemmas by running:
 ```sh
 ./prove-auto.sh
 ```
 
-Some lemmas are not automatically provable (those not prefixed by `Auto_`).
+There is also one automatically provable lemma for which proof search is computationally expensive.
+Proving this lemma took us around 1-2 days.
+You can prove this lemma by running:
+```sh
+./prove-expensive
+```
+
+Some lemmas are not automatically provable (those not prefixed by `Auto_` or `Expensive_Auto_`).
 We provide already constructed proofs for these lemmas in `/proofs`.
 See the README in that folder for more information on how to verify these proofs.
 
