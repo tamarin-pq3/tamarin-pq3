@@ -56,7 +56,7 @@ Memory consumption is estimated from the process's maximum resident set size.
 
 Note that Tamarin can use RAM inefficiently.
 Tamarin stores the entire proof tree, but a proof only needs to access a path in the proof tree.
-Therefore, memory compression can help you check proofs on machines with much less memory than indicated.
+Therefore, memory compression can help you check proofs on machines with much less physical memory than indicated.
 For example, some proofs were also constructed on a Macbook with 32 GB of RAM, where we observed 100 GB of virtual memory usage but only 5-10 GB of physical memory usage.
 
 | Script | Time | Memory |
