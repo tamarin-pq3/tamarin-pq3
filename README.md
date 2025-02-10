@@ -47,11 +47,19 @@ Some lemmas are not automatically provable (those not prefixed by `Auto_` or `Ex
 We provide already constructed proofs for these lemmas in `/proofs`.
 See the README in that folder for more information on how to verify these proofs.
 
-## Proof Complexity
+## Computational Resources Required
 
 Proofs were constructed on a server with 252 GB of memory and two Intel Xeon E5-2650 v4 CPUs, i.e., a 48-thread server.
-Some of the proofs can take up to three days to construct or verify, and we observed peak RAM usage of around 150 GB.
-These are not exact numbers.
+We note approximate time and memory requirements for each script below, which were collected using the `time` utility.
+We note similar requirements for stored proofs in `proofs/`.
+Memory consumption is estimated from the process's maximum resident set size.
 
-Note that Tamarin can use RAM inefficiently, and memory compression can bring you a long way.
-During proof development, proofs were also constructed on a Macbook with 32 GB of RAM, and we often observed 100 GB of virtual memory usage but only 5-10 GB of physical memory usage.
+Note that Tamarin can use RAM inefficiently.
+Tamarin stores the entire proof tree, but a proof only needs to access a path in the proof tree.
+Therefore, memory compression can help you check proofs on machines with much less memory than indicated.
+For example, some proofs were also constructed on a Macbook with 32 GB of RAM, where we observed 100 GB of virtual memory usage but only 5-10 GB of physical memory usage.
+
+| Script | Time | Memory |
+| ------ | ---- | ------ |
+| `prove-auto.sh` | 8h | 10 GB |
+| `prove-expensive.sh` | 8h | 100 GB |
