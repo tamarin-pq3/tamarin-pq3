@@ -9546,256 +9546,316 @@ rule (modulo E) PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#b4d9ef]:
 
 lemma ExecutabilityPublicKeyRatchetSomeNewKEMSS:
   exists-trace
-  "∃ id1 id2 i s r rk m ad #t1 #t2 #t3.
-    (((((PublicKeyRatchetNewReceiver( id2, i, s, r, rk ) @ #t3) ∧
-        (∃ decap pk. DecapKemSS( id2, s, r, decap, pk ) @ #t3)) ∧
-       (MessageReceived( id2, i, s, r, m, ad ) @ #t3)) ∧
-      (PublicKeyRatchetNewSender( id1, i, s, r, rk ) @ #t1)) ∧
-     (MessageSent( id1, i, s, r, m, ad ) @ #t2)) ∧
+  "∃ id i s r rk m ad #t.
+    (((PublicKeyRatchetNewReceiver( id, i, s, r, rk ) @ #t) ∧
+      (∃ decap pk. DecapKemSS( id, r, s, decap, pk ) @ #t)) ∧
+     (MessageReceived( id, i, s, r, m, ad ) @ #t)) ∧
     (¬(∃ #x. SomeCompromise( ) @ #x))"
 /*
 guarded formula characterizing all satisfying traces:
-"∃ id1 id2 i s r rk m ad #t1 #t2 #t3.
-  (PublicKeyRatchetNewReceiver( id2, i, s, r, rk ) @ #t3) ∧
-  (MessageReceived( id2, i, s, r, m, ad ) @ #t3) ∧
-  (PublicKeyRatchetNewSender( id1, i, s, r, rk ) @ #t1) ∧
-  (MessageSent( id1, i, s, r, m, ad ) @ #t2)
+"∃ id i s r rk m ad #t.
+  (PublicKeyRatchetNewReceiver( id, i, s, r, rk ) @ #t) ∧
+  (MessageReceived( id, i, s, r, m, ad ) @ #t)
  ∧
-  (∃ decap pk. (DecapKemSS( id2, s, r, decap, pk ) @ #t3)) ∧
+  (∃ decap pk. (DecapKemSS( id, r, s, decap, pk ) @ #t)) ∧
   (∀ #x. (SomeCompromise( ) @ #x) ⇒ ⊥)"
 */
 simplify
-solve( MessageReceived( id2, i, s, r, m, ad ) @ #t3 )
-  case PublicKeyRatchetNewReceiverNoNewKemSS
-  by solve( DecapKemSS( ~id, $Them, $Me, decap, pk ) @ #t3 )
-next
+solve( DecapKemSS( id, r, s, decap, pk ) @ #t )
   case PublicKeyRatchetNewReceiverWithSomeNewKemSS
-  solve( DecapKemSS( ~id, $Them, $Me, decap, pk ) @ #t3 )
+  solve( PublicKeyRatchetNewReceiver( ~id, i.1, $Them, $Me, rk
+         ) @ #t )
     case PublicKeyRatchetNewReceiverWithSomeNewKemSS
-    solve( MessageSent( id1, (%i%+%1), $Me, $Me, m, $AD ) @ #t2 )
-      case PublicKeyRatchetNewSenderNoNewKemSS
-      solve( PublicKeyRatchetNewReceiver( ~id.1, (%i%+%1), $Me, $Me, rk
-             ) @ #t3 )
-        case PublicKeyRatchetNewReceiverWithSomeNewKemSS
-        solve( PublicKeyRatchetNewSender( ~id, (%i%+%1), $Me, $Me,
-                                          hkdf(hkdf(hkdf(z.3, rootKey.1), decap),
-                                               <$Me, pk(x), $Me, pk(~idKey.1)>)
-               ) @ #t1 )
-          case PublicKeyRatchetNewSenderNoNewKemSS
-          by contradiction /* from formulas */
-        qed
-      qed
-    next
-      case PublicKeyRatchetNewSenderSomeNewKemSS
-      solve( PublicKeyRatchetNewReceiver( ~id.1, (%i%+%1), $Me, $Me, rk
-             ) @ #t3 )
-        case PublicKeyRatchetNewReceiverWithSomeNewKemSS
-        solve( PublicKeyRatchetNewSender( ~id, (%i%+%1), $Me, $Me,
-                                          hkdf(hkdf(hkdf(z.3, rootKey.1), decap),
-                                               <$Me, pk(x), $Me, pk(~idKey.1)>)
-               ) @ #t1 )
-          case PublicKeyRatchetNewSenderSomeNewKemSS
-          solve( Session( ~id, %i, 'R', $Me, discard0, ~oldKemSk, $Me,
-                          pk(~idKey.1), theirEcdhPk, discard1, Just(theirKemPk), discard2,
-                          discard3, rootKey, discard4
-                 ) ▶₄ #t1 )
-            case PublicKeyRatchetNewReceiverNoNewKemSS
-            by sorry
-          next
-            case PublicKeyRatchetNewReceiverWithSomeNewKemSS
-            by sorry
-          next
-            case ReceiveSymmetricRatchet
-            solve( Session( ~id, %i, 'R', $Me, ~ecdhSk.1, ~oldKemSk, $Me,
-                            pk(~idKey.1), theirEcdhPk, discard1, Just(theirKemPk), discard2,
-                            discard3, rootKey, chainKey
-                   ) ▶₁ #vr )
+    solve( MessageReceived( ~id, (%i%+%1), $Them, $Me, m, ad ) @ #t )
+      case PublicKeyRatchetNewReceiverWithSomeNewKemSS
+      solve( Session( ~id, %i, 'S', $Me, ~ecdhSk, ~kemSk, $Them, pk(x),
+                      discard1, maybeTheirKemPk, None, discard2, discard3, rootKey,
+                      discard4
+             ) ▶₁ #t )
+        case PublicKeyRatchetNewSenderNoNewKemSS_case_1
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderNoNewKemSS_case_2
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderNoNewKemSS_case_3
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderNoNewKemSS_case_4
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderNoNewKemSS_case_5
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderNoNewKemSS_case_6
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderNoNewKemSS_case_7
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderNoNewKemSS_case_8
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderSomeNewKemSS_case_1
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderSomeNewKemSS_case_2
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderSomeNewKemSS_case_3
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderSomeNewKemSS_case_4
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderSomeNewKemSS_case_5
+        by sorry
+      next
+        case PublicKeyRatchetNewSenderSomeNewKemSS_case_6
+        by sorry
+      next
+        case SendSymmetricRatchet
+        solve( Session( ~id, %i, 'S', $Me, ~ecdhSk, ~kemSk, $Them, pk(x),
+                        discard1, maybeTheirKemPk, None, discard2, discard3, rootKey,
+                        chainKey
+               ) ▶₂ #vr )
+          case PublicKeyRatchetNewSenderNoNewKemSS_case_1
+          solve( !KU( sign(<'msg_sig', ciphertext, $AD, 
+                            hkdf(hkdf(suffix(hkdf(hkdf(hkdf(z.2,
+                                                            prefix(hkdf(hkdf(hkdf(z,
+                                                                                  prefix(hkdf(hkdf(hkdf(z.1,
+                                                                                                        '0'),
+                                                                                                   discard2),
+                                                                                              <
+                                                                                               $Them, 
+                                                                                               pk(~idKey.1), 
+                                                                                               $Me, 
+                                                                                               pk(~idKey.2)
+                                                                                              >))),
+                                                                             '0'),
+                                                                        <$Me, pk(~idKey.2), $Them, 
+                                                                         pk(~idKey.1)>))),
+                                                       decap),
+                                                  <$Them, pk(~idKey.1), $Me, pk(~idKey)>)),
+                                      'msg_key'),
+                                 'msg_key_ind'), 
+                            theirEcdhPk, (%1%+%1%+%1%+%1), 
+                            <$Them, pk(~idKey.1), $Me, pk(~idKey)>, maybeTheirNewKemPk, 
+                            Just(kemEncap), None>,
+                           ~idKey.1)
+                 ) @ #vk.5 )
+            case PublicKeyRatchetNewSenderSomeNewKemSS_case_1
+            solve( Session( ~id.1, (%1%+%1), 'R', $Them, ~ecdhSk.2, ~oldKemSk,
+                            $Me, pk(~idKey), 'g'^~ecdhSk, discard1.1, Just(pqpk(~kemSk)),
+                            discard2.1, discard3,
+                            prefix(hkdf(hkdf(hkdf(z,
+                                                  prefix(hkdf(hkdf(hkdf(z.1, '0'), discard2),
+                                                              <$Them, pk(~idKey.1), $Me, 
+                                                               pk(~idKey.2)>))),
+                                             '0'),
+                                        <$Me, pk(~idKey.2), $Them, pk(~idKey.1)>)),
+                            chainKey
+                   ) ▶₁ #vr.11 )
               case PublicKeyRatchetNewReceiverNoNewKemSS
-              solve( Session( ~id, %i, 'S', $Me, ~ecdhSk.1, ~oldKemSk, $Me,
-                              pk(~idKey.1), discard1.2, discard1, None, discard2, discard3,
-                              rootKey, discard2.2
-                     ) ▶₁ #vr.2 )
-                case PublicKeyRatchetNewSenderNoNewKemSS_case_1
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderNoNewKemSS_case_2
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderNoNewKemSS_case_3
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderNoNewKemSS_case_4
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderNoNewKemSS_case_5
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderNoNewKemSS_case_6
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderNoNewKemSS_case_7
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderNoNewKemSS_case_8
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderSomeNewKemSS_case_1
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderSomeNewKemSS_case_2
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderSomeNewKemSS_case_3
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderSomeNewKemSS_case_4
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderSomeNewKemSS_case_5
-                by sorry
-              next
-                case PublicKeyRatchetNewSenderSomeNewKemSS_case_6
-                by sorry
-              next
-                case SendSymmetricRatchet
-                by sorry
-              next
+              solve( Session( ~id.1, %1, 'S', $Them, ~ecdhSk.1, ~oldKemSk, $Me,
+                              pk(~idKey), discard1.1, discard1, None, discard2.1, discard3,
+                              prefix(hkdf(hkdf(hkdf('g'^(~preKey*~ecdhSk.1), '0'), discard2),
+                                          <$Them, pk(~idKey.1), $Me, pk(~idKey)>)),
+                              discard2.2
+                     ) ▶₁ #vr.13 )
                 case SessionStartAsASender
-                solve( Session( ~id.1, (%1%+%1%+%1), 'S', $Me, ~ecdhSk.2, ~kemSk,
-                                $Me, pk(~idKey), discard1, maybeTheirKemPk, None, discard2,
-                                discard3,
-                                prefix(hkdf(hkdf(hkdf(z,
-                                                      prefix(hkdf(hkdf(hkdf('g'^(~preKey*~ecdhSk.1),
-                                                                            '0'),
-                                                                       ~kemSS.1),
-                                                                  <$Me, pk(~idKey.1), $Me, 
-                                                                   pk(~idKey.1)>))),
-                                                 '0'),
-                                            <$Me, pk(~idKey.1), $Me, pk(~idKey.1)>)),
-                                discard4
-                       ) ▶₁ #t3 )
-                  case PublicKeyRatchetNewSenderNoNewKemSS_case_1
-                  by sorry
+                solve( !KU( hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*~ecdhSk.2
+                                                                ),
+                                                            prefix(hkdf(hkdf(hkdf('g'^(~ecdhSk*
+                                                                                       ~ecdhSk.1),
+                                                                                  prefix(hkdf(hkdf(hkdf('g'^(
+                                                                                                             ~preKey*
+                                                                                                             ~ecdhSk.1
+                                                                                                            ),
+                                                                                                        '0'),
+                                                                                                   ~kemSS),
+                                                                                              <
+                                                                                               $Them, 
+                                                                                               pk(~idKey.1), 
+                                                                                               $Me, 
+                                                                                               pk(~idKey)
+                                                                                              >))),
+                                                                             '0'),
+                                                                        <$Me, pk(~idKey), $Them, 
+                                                                         pk(~idKey.1)>))),
+                                                       ~kemSS.1),
+                                                  <$Them, pk(~idKey.1), $Me, pk(~idKey)>)),
+                                      'msg_key'),
+                                 'msg_key_ind')
+                       ) @ #vk.11 )
+                  case ChainKeyLeak_case_01
+                  by contradiction /* from formulas */
                 next
-                  case PublicKeyRatchetNewSenderNoNewKemSS_case_2
-                  by sorry
+                  case ChainKeyLeak_case_02
+                  by contradiction /* from formulas */
                 next
-                  case PublicKeyRatchetNewSenderNoNewKemSS_case_3
-                  by sorry
+                  case ChainKeyLeak_case_03
+                  by contradiction /* from formulas */
                 next
-                  case PublicKeyRatchetNewSenderNoNewKemSS_case_4
-                  by sorry
+                  case ChainKeyLeak_case_04
+                  by contradiction /* from formulas */
                 next
-                  case SendSymmetricRatchet
-                  solve( Session( ~id.1, (%1%+%1), 'S', $Me, ~ecdhSk.2, ~kemSk, $Me,
-                                  pk(~idKey), discard1, maybeTheirKemPk, None, discard2, discard3,
-                                  prefix(hkdf(hkdf(hkdf(z,
-                                                        prefix(hkdf(hkdf(hkdf('g'^(~preKey*~ecdhSk.1
-                                                                                  ),
-                                                                              '0'),
-                                                                         ~kemSS.1),
-                                                                    <$Me, pk(~idKey.1), $Me, 
-                                                                     pk(~idKey.1)>))),
-                                                   '0'),
-                                              <$Me, pk(~idKey.1), $Me, pk(~idKey.1)>)),
-                                  chainKey
-                         ) ▶₂ #vr.5 )
-                    case PublicKeyRatchetNewSenderNoNewKemSS_case_1
-                    solve( !IdentityKey( $Me, ~idKey ) ▶₀ #t3 )
-                      case UserKeyGen
-                      solve( !IdentityKey( $Me, ~idKey ) ▶₃ #t1 )
-                        case UserKeyGen
-                        solve( !KU( sign(<'msg_sig', 
-                                          senc(~msg,
-                                               hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*~ecdhSk.2),
-                                                                          prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                     ~ecdhSk.1*
-                                                                                                     ~ecdhSk.2
-                                                                                                    ),
-                                                                                                prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                           ~preKey*
-                                                                                                                           ~ecdhSk.1
-                                                                                                                          ),
-                                                                                                                      '0'),
-                                                                                                                 ~kemSS.1),
-                                                                                                            <
-                                                                                                             $Me, 
-                                                                                                             pk(~idKey), 
-                                                                                                             $Me, 
-                                                                                                             pk(~idKey)
-                                                                                                            >))),
-                                                                                           '0'),
-                                                                                      <$Me, 
-                                                                                       pk(~idKey), 
-                                                                                       $Me, 
-                                                                                       pk(~idKey)
-                                                                                      >))),
+                  case ChainKeyLeak_case_05
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_06
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_07
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_08
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_09
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_10
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_11
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_12
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_13
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_14
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_15
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_16
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_17
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_18
+                  by contradiction /* from formulas */
+                next
+                  case ChainKeyLeak_case_19
+                  by contradiction /* from formulas */
+                next
+                  case PublicKeyRatchetNewSenderSomeNewKemSS
+                  solve( !KU( senc(~m,
+                                   hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*~ecdhSk.2),
+                                                              prefix(hkdf(hkdf(hkdf('g'^(~ecdhSk*
+                                                                                         ~ecdhSk.1),
+                                                                                    prefix(hkdf(hkdf(hkdf('g'^(
+                                                                                                               ~preKey*
+                                                                                                               ~ecdhSk.1
+                                                                                                              ),
+                                                                                                          '0'),
+                                                                                                     ~kemSS),
+                                                                                                <
+                                                                                                 $Them, 
+                                                                                                 pk(~idKey.1), 
+                                                                                                 $Me, 
+                                                                                                 pk(~idKey)
+                                                                                                >))),
+                                                                               '0'),
+                                                                          <$Me, pk(~idKey), $Them, 
+                                                                           pk(~idKey.1)>))),
+                                                         ~kemSS.1),
+                                                    <$Them, pk(~idKey.1), $Me, pk(~idKey)>)),
+                                        'msg_key'))
+                         ) @ #vk.5 )
+                    case PublicKeyRatchetNewSenderSomeNewKemSS
+                    solve( !KU( sign(<'msg_sig', ciphertext.1, $AD.4, 
+                                      hkdf(hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*~ecdhSk.1),
+                                                                           prefix(hkdf(hkdf(hkdf('g'^(
+                                                                                                      ~preKey*
+                                                                                                      ~ecdhSk.1
+                                                                                                     ),
+                                                                                                 '0'),
+                                                                                            ~kemSS),
+                                                                                       <$Them, 
+                                                                                        pk(~idKey.1), 
+                                                                                        $Me, 
+                                                                                        pk(~idKey)
+                                                                                       >))),
+                                                                      '0'),
+                                                                 <$Me, pk(~idKey), $Them, 
+                                                                  pk(~idKey.1)>)),
+                                                     'chain_key'),
+                                                'msg_key'),
+                                           'msg_key_ind'), 
+                                      'g'^~ecdhSk, (%1%+%1%+%1), 
+                                      <$Me, pk(~idKey), $Them, pk(~idKey.1)>, None, None, None>,
+                                     ~idKey)
+                           ) @ #vk.47 )
+                      case SendSymmetricRatchet
+                      solve( !KU( sign(<'msg_sig', ciphertext.1, $AD.5, 
+                                        hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*~ecdhSk.1),
+                                                                        prefix(hkdf(hkdf(hkdf('g'^(
+                                                                                                   ~preKey*
+                                                                                                   ~ecdhSk.1
+                                                                                                  ),
+                                                                                              '0'),
+                                                                                         ~kemSS),
+                                                                                    <$Them, 
+                                                                                     pk(~idKey.1), 
+                                                                                     $Me, pk(~idKey)
+                                                                                    >))),
+                                                                   '0'),
+                                                              <$Me, pk(~idKey), $Them, pk(~idKey.1)
+                                                              >)),
+                                                  'msg_key'),
+                                             'msg_key_ind'), 
+                                        'g'^~ecdhSk, (%1%+%1), 
+                                        <$Me, pk(~idKey), $Them, pk(~idKey.1)>, Just(pqpk(~kemSk)), 
+                                        None, None>,
+                                       ~idKey)
+                             ) @ #vk.56 )
+                        case PublicKeyRatchetNewSenderNoNewKemSS
+                        solve( !KU( sign(<'msg_sig', ciphertext, $AD.4, 
+                                          hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~preKey*~ecdhSk.1),
+                                                                          '0'),
                                                                      ~kemSS),
-                                                                <$Me, pk(~idKey), $Me, pk(~idKey)
-                                                                >)),
-                                                    'msg_key')), 
-                                          $AD, 
-                                          hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*~ecdhSk.2),
-                                                                          prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                     ~ecdhSk.1*
-                                                                                                     ~ecdhSk.2
-                                                                                                    ),
-                                                                                                prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                           ~preKey*
-                                                                                                                           ~ecdhSk.1
-                                                                                                                          ),
-                                                                                                                      '0'),
-                                                                                                                 ~kemSS.1),
-                                                                                                            <
-                                                                                                             $Me, 
-                                                                                                             pk(~idKey), 
-                                                                                                             $Me, 
-                                                                                                             pk(~idKey)
-                                                                                                            >))),
-                                                                                           '0'),
-                                                                                      <$Me, 
-                                                                                       pk(~idKey), 
-                                                                                       $Me, 
-                                                                                       pk(~idKey)
-                                                                                      >))),
-                                                                     ~kemSS),
-                                                                <$Me, pk(~idKey), $Me, pk(~idKey)
-                                                                >)),
+                                                                <$Them, pk(~idKey.1), $Me, 
+                                                                 pk(~idKey)>)),
                                                     'msg_key'),
                                                'msg_key_ind'), 
-                                          'g'^~ecdhSk, (%1%+%1%+%1%+%1), 
-                                          <$Me, pk(~idKey), $Me, pk(~idKey)>, maybeTheirNewKemPk, 
-                                          Just(encap(~kemSS, pqpk(~kemSk))), None>,
-                                         ~idKey)
-                               ) @ #vk.5 )
-                          case PublicKeyRatchetNewSenderSomeNewKemSS_case_1
-                          solve( !KU( hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*~ecdhSk.2
-                                                                          ),
-                                                                      prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                 ~ecdhSk.1*
-                                                                                                 ~ecdhSk.2
-                                                                                                ),
-                                                                                            prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                       ~preKey*
-                                                                                                                       ~ecdhSk.1
-                                                                                                                      ),
-                                                                                                                  '0'),
-                                                                                                             ~kemSS.1),
-                                                                                                        <
-                                                                                                         $Me, 
-                                                                                                         pk(~idKey), 
-                                                                                                         $Me, 
-                                                                                                         pk(~idKey)
-                                                                                                        >))),
-                                                                                       '0'),
-                                                                                  <$Me, pk(~idKey), 
-                                                                                   $Me, pk(~idKey)
-                                                                                  >))),
-                                                                 ~kemSS),
-                                                            <$Me, pk(~idKey), $Me, pk(~idKey)>)),
+                                          'g'^~ecdhSk.1, %1, 
+                                          <$Them, pk(~idKey.1), $Me, pk(~idKey)>, None, 
+                                          Just(encap(~kemSS, pqpk(~kemPreKey))), 
+                                          Just(h(<'g'^~preKey, pqpk(~kemPreKey), 
+                                                  sign(<'nf_reg', pqpk(~kemPreKey), 'g'^~preKey>,
+                                                       ~idKey)
+                                                 >))
+                                         >,
+                                         ~idKey.1)
+                               ) @ #vk.42 )
+                          case SessionStartAsASender
+                          solve( !KU( hkdf(hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*
+                                                                                ~ecdhSk.1),
+                                                                           prefix(hkdf(hkdf(hkdf('g'^(
+                                                                                                      ~preKey*
+                                                                                                      ~ecdhSk.1
+                                                                                                     ),
+                                                                                                 '0'),
+                                                                                            ~kemSS),
+                                                                                       <$Them, 
+                                                                                        pk(~idKey.1), 
+                                                                                        $Me, 
+                                                                                        pk(~idKey)
+                                                                                       >))),
+                                                                      '0'),
+                                                                 <$Me, pk(~idKey), $Them, 
+                                                                  pk(~idKey.1)>)),
+                                                     'chain_key'),
                                                 'msg_key'),
                                            'msg_key_ind')
-                                 ) @ #vk.11 )
+                                 ) @ #vk.54 )
                             case ChainKeyLeak_case_01
                             by contradiction /* from formulas */
                           next
@@ -9853,96 +9913,129 @@ next
                             case ChainKeyLeak_case_19
                             by contradiction /* from formulas */
                           next
-                            case PublicKeyRatchetNewSenderSomeNewKemSS
-                            solve( !KU( senc(~msg,
-                                             hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*~ecdhSk.2),
-                                                                        prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                   ~ecdhSk.1*
-                                                                                                   ~ecdhSk.2
-                                                                                                  ),
-                                                                                              prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                         ~preKey*
-                                                                                                                         ~ecdhSk.1
-                                                                                                                        ),
-                                                                                                                    '0'),
-                                                                                                               ~kemSS.1),
-                                                                                                          <
-                                                                                                           $Me, 
-                                                                                                           pk(~idKey), 
-                                                                                                           $Me, 
-                                                                                                           pk(~idKey)
-                                                                                                          >))),
-                                                                                         '0'),
-                                                                                    <$Me, 
-                                                                                     pk(~idKey), 
-                                                                                     $Me, pk(~idKey)
-                                                                                    >))),
-                                                                   ~kemSS),
-                                                              <$Me, pk(~idKey), $Me, pk(~idKey)>)),
+                            case SendSymmetricRatchet
+                            solve( !KU( senc(~z,
+                                             hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*~ecdhSk.1
+                                                                                 ),
+                                                                             prefix(hkdf(hkdf(hkdf('g'^(
+                                                                                                        ~preKey*
+                                                                                                        ~ecdhSk.1
+                                                                                                       ),
+                                                                                                   '0'),
+                                                                                              ~kemSS),
+                                                                                         <$Them, 
+                                                                                          pk(~idKey.1), 
+                                                                                          $Me, 
+                                                                                          pk(~idKey)
+                                                                                         >))),
+                                                                        '0'),
+                                                                   <$Me, pk(~idKey), $Them, 
+                                                                    pk(~idKey.1)>)),
+                                                       'chain_key'),
                                                   'msg_key'))
-                                   ) @ #vk.4 )
-                              case PublicKeyRatchetNewSenderSomeNewKemSS
-                              solve( !KU( sign(<'msg_sig', ciphertext.1, $AD.2, 
-                                                hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk.1*
-                                                                                     ~ecdhSk.2),
-                                                                                prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                           ~preKey*
-                                                                                                           ~ecdhSk.1
-                                                                                                          ),
-                                                                                                      '0'),
-                                                                                                 ~kemSS.1),
-                                                                                            <$Me, 
-                                                                                             pk(~idKey), 
-                                                                                             $Me, 
-                                                                                             pk(~idKey)
-                                                                                            >))),
-                                                                           '0'),
-                                                                      <$Me, pk(~idKey), $Me, 
-                                                                       pk(~idKey)>)),
-                                                          'msg_key'),
-                                                     'msg_key_ind'), 
-                                                'g'^~ecdhSk.2, (%1%+%1), 
-                                                <$Me, pk(~idKey), $Me, pk(~idKey)>, 
-                                                Just(pqpk(~kemSk)), None, None>,
-                                               ~idKey)
-                                     ) @ #vk.46 )
-                                case PublicKeyRatchetNewSenderNoNewKemSS
-                                solve( !KU( sign(<'msg_sig', ciphertext.1, $AD.5, 
-                                                  hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~preKey*
-                                                                                       ~ecdhSk.1),
-                                                                                  '0'),
-                                                                             ~kemSS.1),
-                                                                        <$Me, pk(~idKey), $Me, 
-                                                                         pk(~idKey)>)),
-                                                            'msg_key'),
-                                                       'msg_key_ind'), 
-                                                  'g'^~ecdhSk.1, %1, 
-                                                  <$Me, pk(~idKey), $Me, pk(~idKey)>, None, 
-                                                  Just(encap(~kemSS.1, pqpk(~kemPreKey))), 
-                                                  Just(h(<'g'^~preKey, pqpk(~kemPreKey), 
-                                                          sign(<'nf_reg', pqpk(~kemPreKey), 
-                                                                'g'^~preKey>,
-                                                               ~idKey)
-                                                         >))
-                                                 >,
-                                                 ~idKey)
-                                       ) @ #vk.53 )
-                                  case SessionStartAsASender
-                                  solve( !KU( hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk.1*
-                                                                                   ~ecdhSk.2),
-                                                                              prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                         ~preKey*
-                                                                                                         ~ecdhSk.1
-                                                                                                        ),
-                                                                                                    '0'),
-                                                                                               ~kemSS.1),
-                                                                                          <$Me, 
-                                                                                           pk(~idKey), 
-                                                                                           $Me, 
-                                                                                           pk(~idKey)
-                                                                                          >))),
-                                                                         '0'),
-                                                                    <$Me, pk(~idKey), $Me, 
+                                   ) @ #vk.51 )
+                              case SendSymmetricRatchet
+                              solve( !KU( hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*~ecdhSk.1
+                                                                              ),
+                                                                          prefix(hkdf(hkdf(hkdf('g'^(
+                                                                                                     ~preKey*
+                                                                                                     ~ecdhSk.1
+                                                                                                    ),
+                                                                                                '0'),
+                                                                                           ~kemSS),
+                                                                                      <$Them, 
+                                                                                       pk(~idKey.1), 
+                                                                                       $Me, 
+                                                                                       pk(~idKey)
+                                                                                      >))),
+                                                                     '0'),
+                                                                <$Me, pk(~idKey), $Them, 
+                                                                 pk(~idKey.1)>)),
+                                                    'msg_key'),
+                                               'msg_key_ind')
+                                     ) @ #vk.58 )
+                                case ChainKeyLeak_case_01
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_02
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_03
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_04
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_05
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_06
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_07
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_08
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_09
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_10
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_11
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_12
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_13
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_14
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_15
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_16
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_17
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_18
+                                by contradiction /* from formulas */
+                              next
+                                case ChainKeyLeak_case_19
+                                by contradiction /* from formulas */
+                              next
+                                case PublicKeyRatchetNewSenderNoNewKemSS_case_1
+                                solve( !KU( senc(~msg.1,
+                                                 hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk*~ecdhSk.1),
+                                                                            prefix(hkdf(hkdf(hkdf('g'^(
+                                                                                                       ~preKey*
+                                                                                                       ~ecdhSk.1
+                                                                                                      ),
+                                                                                                  '0'),
+                                                                                             ~kemSS),
+                                                                                        <$Them, 
+                                                                                         pk(~idKey.1), 
+                                                                                         $Me, 
+                                                                                         pk(~idKey)
+                                                                                        >))),
+                                                                       '0'),
+                                                                  <$Me, pk(~idKey), $Them, 
+                                                                   pk(~idKey.1)>)),
+                                                      'msg_key'))
+                                       ) @ #vk.56 )
+                                  case PublicKeyRatchetNewSenderNoNewKemSS
+                                  solve( !KU( hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~preKey*~ecdhSk.1
+                                                                                  ),
+                                                                              '0'),
+                                                                         ~kemSS),
+                                                                    <$Them, pk(~idKey.1), $Me, 
                                                                      pk(~idKey)>)),
                                                         'msg_key'),
                                                    'msg_key_ind')
@@ -10004,392 +10097,131 @@ next
                                     case ChainKeyLeak_case_19
                                     by contradiction /* from formulas */
                                   next
-                                    case PublicKeyRatchetNewSenderNoNewKemSS_case_1
-                                    solve( !KU( senc(~msg.1,
-                                                     hkdf(suffix(hkdf(hkdf(hkdf('g'^(~ecdhSk.1*
-                                                                                     ~ecdhSk.2),
-                                                                                prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                           ~preKey*
-                                                                                                           ~ecdhSk.1
-                                                                                                          ),
-                                                                                                      '0'),
-                                                                                                 ~kemSS.1),
-                                                                                            <$Me, 
-                                                                                             pk(~idKey), 
-                                                                                             $Me, 
-                                                                                             pk(~idKey)
-                                                                                            >))),
-                                                                           '0'),
-                                                                      <$Me, pk(~idKey), $Me, 
+                                    case SendSymmetricRatchet
+                                    by sorry
+                                  next
+                                    case SessionStartAsASender
+                                    solve( !KU( senc(~msg.2,
+                                                     hkdf(suffix(hkdf(hkdf(hkdf('g'^(~preKey*
+                                                                                     ~ecdhSk.1),
+                                                                                '0'),
+                                                                           ~kemSS),
+                                                                      <$Them, pk(~idKey.1), $Me, 
                                                                        pk(~idKey)>)),
                                                           'msg_key'))
-                                           ) @ #vk.48 )
-                                      case PublicKeyRatchetNewSenderNoNewKemSS
-                                      solve( !KU( hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(~preKey*
-                                                                                       ~ecdhSk.1),
-                                                                                  '0'),
-                                                                             ~kemSS.1),
-                                                                        <$Me, pk(~idKey), $Me, 
-                                                                         pk(~idKey)>)),
-                                                            'msg_key'),
-                                                       'msg_key_ind')
-                                             ) @ #vk.56 )
-                                        case ChainKeyLeak_case_01
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_02
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_03
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_04
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_05
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_06
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_07
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_08
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_09
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_10
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_11
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_12
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_13
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_14
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_15
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_16
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_17
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_18
-                                        by contradiction /* from formulas */
-                                      next
-                                        case ChainKeyLeak_case_19
-                                        by contradiction /* from formulas */
-                                      next
-                                        case SendSymmetricRatchet
-                                        by sorry
-                                      next
+                                           ) @ #vk.47 )
+                                      case SessionStartAsASender
+                                      solve( !KU( Just(h(<'g'^~preKey, pqpk(~kemPreKey), 
+                                                          sign(<'nf_reg', pqpk(~kemPreKey), 
+                                                                'g'^~preKey>,
+                                                               ~idKey)
+                                                         >))
+                                             ) @ #vk.53 )
                                         case SessionStartAsASender
-                                        solve( !KU( senc(~msg.2,
-                                                         hkdf(suffix(hkdf(hkdf(hkdf('g'^(~preKey*
-                                                                                         ~ecdhSk.1),
-                                                                                    '0'),
-                                                                               ~kemSS.1),
-                                                                          <$Me, pk(~idKey), $Me, 
-                                                                           pk(~idKey)>)),
-                                                              'msg_key'))
+                                        solve( !KU( Just(encap(~kemSS, pqpk(~kemPreKey)))
                                                ) @ #vk.53 )
                                           case SessionStartAsASender
-                                          solve( !KU( Just(h(<'g'^~preKey, pqpk(~kemPreKey), 
-                                                              sign(<'nf_reg', pqpk(~kemPreKey), 
-                                                                    'g'^~preKey>,
-                                                                   ~idKey)
-                                                             >))
-                                                 ) @ #vk.59 )
-                                            case SessionStartAsASender
-                                            solve( !KU( Just(encap(~kemSS.1, pqpk(~kemPreKey)))
-                                                   ) @ #vk.59 )
-                                              case SessionStartAsASender
-                                              solve( !KU( Just(encap(~kemSS, pqpk(~kemSk)))
-                                                     ) @ #vk.36 )
-                                                case PublicKeyRatchetNewSenderSomeNewKemSS
-                                                solve( !KU( Just(pqpk(~newKemSk)) ) @ #vk.36 )
-                                                  case PublicKeyRatchetNewSenderSomeNewKemSS
-                                                  solve( !KU( Just(pqpk(~kemSk)) ) @ #vk.56 )
-                                                    case PublicKeyRatchetNewSenderNoNewKemSS
-                                                    solve( !KU( 'g'^~ecdhSk.1 ) @ #vk.58 )
+                                          solve( !KU( Just(encap(~kemSS.1, pqpk(~kemSk)))
+                                                 ) @ #vk.45 )
+                                            case PublicKeyRatchetNewSenderSomeNewKemSS
+                                            solve( !KU( Just(pqpk(~newKemSk)) ) @ #vk.45 )
+                                              case PublicKeyRatchetNewSenderSomeNewKemSS
+                                              solve( !KU( Just(pqpk(~kemSk)) ) @ #vk.59 )
+                                                case PublicKeyRatchetNewSenderNoNewKemSS
+                                                solve( !IdentityKey( $Me, ~idKey ) ▶₀ #t )
+                                                  case UserKeyGen
+                                                  solve( !KU( 'g'^~ecdhSk.2 ) @ #vk.47 )
+                                                    case PublicKeyRatchetNewSenderSomeNewKemSS_case_1
+                                                    solve( !KU( 'g'^~ecdhSk.1 ) @ #vk.53 )
                                                       case SendSymmetricRatchet
                                                       by sorry
                                                     next
                                                       case SessionStartAsASender_case_1
-                                                      solve( !KU( 'g'^~ecdhSk.2 ) @ #vk.53 )
+                                                      solve( !KU( 'g'^~ecdhSk ) @ #vk.56 )
                                                         case PublicKeyRatchetNewSenderNoNewKemSS_case_1
-                                                        solve( !KU( 'g'^~ecdhSk ) @ #vk.40 )
-                                                          case PublicKeyRatchetNewSenderSomeNewKemSS_case_1
-                                                          solve( !KU( sign(<'msg_sig', ciphertext, 
-                                                                            $AD.1, 
-                                                                            hkdf(hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                      ~ecdhSk.1*
-                                                                                                                      ~ecdhSk.2
-                                                                                                                     ),
-                                                                                                                 prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                                            ~preKey*
-                                                                                                                                            ~ecdhSk.1
-                                                                                                                                           ),
-                                                                                                                                       '0'),
-                                                                                                                                  ~kemSS.1),
-                                                                                                                             <
-                                                                                                                              $Me, 
-                                                                                                                              pk(~idKey), 
-                                                                                                                              $Me, 
-                                                                                                                              pk(~idKey)
-                                                                                                                             >))),
-                                                                                                            '0'),
-                                                                                                       <
-                                                                                                        $Me, 
-                                                                                                        pk(~idKey), 
-                                                                                                        $Me, 
-                                                                                                        pk(~idKey)
-                                                                                                       >)),
-                                                                                           'chain_key'),
-                                                                                      'msg_key'),
-                                                                                 'msg_key_ind'), 
-                                                                            'g'^~ecdhSk.2, 
-                                                                            (%1%+%1%+%1), 
-                                                                            <$Me, pk(~idKey), $Me, 
-                                                                             pk(~idKey)>, 
-                                                                            None, None, None>,
-                                                                           ~idKey)
-                                                                 ) @ #vk.53 )
-                                                            case SendSymmetricRatchet
-                                                            solve( !KU( hkdf(hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                  ~ecdhSk.1*
-                                                                                                                  ~ecdhSk.2
-                                                                                                                 ),
-                                                                                                             prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                                        ~preKey*
-                                                                                                                                        ~ecdhSk.1
-                                                                                                                                       ),
-                                                                                                                                   '0'),
-                                                                                                                              ~kemSS.1),
-                                                                                                                         <
-                                                                                                                          $Me, 
-                                                                                                                          pk(~idKey), 
-                                                                                                                          $Me, 
-                                                                                                                          pk(~idKey)
-                                                                                                                         >))),
-                                                                                                        '0'),
-                                                                                                   <
-                                                                                                    $Me, 
-                                                                                                    pk(~idKey), 
-                                                                                                    $Me, 
-                                                                                                    pk(~idKey)
-                                                                                                   >)),
-                                                                                       'chain_key'),
-                                                                                  'msg_key'),
-                                                                             'msg_key_ind')
-                                                                   ) @ #vk.55 )
-                                                              case ChainKeyLeak_case_01
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_02
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_03
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_04
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_05
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_06
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_07
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_08
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_09
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_10
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_11
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_12
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_13
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_14
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_15
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_16
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_17
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_18
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case ChainKeyLeak_case_19
-                                                              by contradiction /* from formulas */
-                                                            next
-                                                              case SendSymmetricRatchet
-                                                              solve( Session( ~id.4, %i, 'S', $Me.2,
-                                                                              ~ecdhSk.4, ~kemSk.3,
-                                                                              $Them, theirIdPk,
-                                                                              theirEcdhPk.1,
-                                                                              maybeTheirKemPk.1,
-                                                                              maybeTheirNewKemPk.1,
-                                                                              kemSS.4, encapPk.1,
-                                                                              rootKey.1,
-                                                                              hkdf(suffix(hkdf(hkdf(hkdf('g'^(
-                                                                                                              ~ecdhSk.1*
-                                                                                                              ~ecdhSk.2
-                                                                                                             ),
-                                                                                                         prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                                    ~preKey*
-                                                                                                                                    ~ecdhSk.1
-                                                                                                                                   ),
-                                                                                                                               '0'),
-                                                                                                                          ~kemSS.1),
-                                                                                                                     <
-                                                                                                                      $Me, 
-                                                                                                                      pk(~idKey), 
-                                                                                                                      $Me, 
-                                                                                                                      pk(~idKey)
-                                                                                                                     >))),
-                                                                                                    '0'),
-                                                                                               <
-                                                                                                $Me, 
-                                                                                                pk(~idKey), 
-                                                                                                $Me, 
-                                                                                                pk(~idKey)
-                                                                                               >)),
-                                                                                   'chain_key')
-                                                                     ) ▶₂ #vr.62 )
-                                                                case PublicKeyRatchetNewSenderNoNewKemSS_case_1
-                                                                solve( Session( ~id.3, (%1%+%1),
-                                                                                'S', $Me, ~ecdhSk.2,
-                                                                                ~kemSk.2, $Me,
-                                                                                pk(~idKey),
-                                                                                theirEcdhPk,
-                                                                                maybeTheirKemPk,
-                                                                                maybeTheirNewKemPk,
-                                                                                kemSS.3, encapPk,
-                                                                                rootKey,
-                                                                                hkdf(suffix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                ~ecdhSk.1*
-                                                                                                                ~ecdhSk.2
-                                                                                                               ),
-                                                                                                           prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                                      ~preKey*
-                                                                                                                                      ~ecdhSk.1
-                                                                                                                                     ),
-                                                                                                                                 '0'),
-                                                                                                                            ~kemSS.1),
-                                                                                                                       <
-                                                                                                                        $Me, 
-                                                                                                                        pk(~idKey), 
-                                                                                                                        $Me, 
-                                                                                                                        pk(~idKey)
-                                                                                                                       >))),
-                                                                                                      '0'),
-                                                                                                 <
-                                                                                                  $Me, 
-                                                                                                  pk(~idKey), 
-                                                                                                  $Me, 
-                                                                                                  pk(~idKey)
-                                                                                                 >)),
-                                                                                     'chain_key')
-                                                                       ) ▶₂ #vr.58 )
-                                                                  case PublicKeyRatchetNewSenderNoNewKemSS
-                                                                  solve( !KU( senc(~z,
-                                                                                   hkdf(hkdf(suffix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                        ~ecdhSk.1*
-                                                                                                                        ~ecdhSk.2
-                                                                                                                       ),
-                                                                                                                   prefix(hkdf(hkdf(hkdf('g'^(
-                                                                                                                                              ~preKey*
-                                                                                                                                              ~ecdhSk.1
-                                                                                                                                             ),
-                                                                                                                                         '0'),
-                                                                                                                                    ~kemSS.1),
-                                                                                                                               <
-                                                                                                                                $Me, 
-                                                                                                                                pk(~idKey), 
-                                                                                                                                $Me, 
-                                                                                                                                pk(~idKey)
-                                                                                                                               >))),
-                                                                                                              '0'),
-                                                                                                         <
-                                                                                                          $Me, 
-                                                                                                          pk(~idKey), 
-                                                                                                          $Me, 
-                                                                                                          pk(~idKey)
-                                                                                                         >)),
-                                                                                             'chain_key'),
-                                                                                        'msg_key'))
-                                                                         ) @ #vk.53 )
-                                                                    case SendSymmetricRatchet
-                                                                    SOLVED // trace found
-                                                                  next
-                                                                    case c_senc
-                                                                    by sorry
-                                                                  qed
-                                                                next
-                                                                  case SendSymmetricRatchet
-                                                                  by sorry
-                                                                qed
-                                                              next
-                                                                case PublicKeyRatchetNewSenderNoNewKemSS_case_2
-                                                                by sorry
-                                                              next
-                                                                case PublicKeyRatchetNewSenderNoNewKemSS_case_3
-                                                                by sorry
-                                                              next
-                                                                case PublicKeyRatchetNewSenderNoNewKemSS_case_4
-                                                                by sorry
-                                                              next
-                                                                case PublicKeyRatchetNewSenderNoNewKemSS_case_5
-                                                                by sorry
-                                                              next
-                                                                case SendSymmetricRatchet
-                                                                by sorry
-                                                              qed
-                                                            next
-                                                              case c_hkdf
-                                                              by sorry
-                                                            qed
+                                                        solve( Session( ~id.4, %i, 'S', $Me.1,
+                                                                        ~ecdhSk.3, ~kemSk.2,
+                                                                        $Them.1, theirIdPk,
+                                                                        theirEcdhPk.1,
+                                                                        maybeTheirKemPk.1,
+                                                                        maybeTheirNewKemPk.1,
+                                                                        kemSS.4, encapPk.1,
+                                                                        rootKey.1,
+                                                                        hkdf(suffix(hkdf(hkdf(hkdf('g'^(
+                                                                                                        ~ecdhSk*
+                                                                                                        ~ecdhSk.1
+                                                                                                       ),
+                                                                                                   prefix(hkdf(hkdf(hkdf('g'^(
+                                                                                                                              ~preKey*
+                                                                                                                              ~ecdhSk.1
+                                                                                                                             ),
+                                                                                                                         '0'),
+                                                                                                                    ~kemSS),
+                                                                                                               <
+                                                                                                                $Them, 
+                                                                                                                pk(~idKey.1), 
+                                                                                                                $Me, 
+                                                                                                                pk(~idKey)
+                                                                                                               >))),
+                                                                                              '0'),
+                                                                                         <$Me, 
+                                                                                          pk(~idKey), 
+                                                                                          $Them, 
+                                                                                          pk(~idKey.1)
+                                                                                         >)),
+                                                                             'chain_key')
+                                                               ) ▶₂ #vr.31 )
+                                                          case PublicKeyRatchetNewSenderNoNewKemSS_case_1
+                                                          solve( Session( ~id.2, (%1%+%1), 'S', $Me,
+                                                                          ~ecdhSk, ~kemSk.1, $Them,
+                                                                          pk(~idKey.1), theirEcdhPk,
+                                                                          maybeTheirKemPk,
+                                                                          maybeTheirNewKemPk,
+                                                                          kemSS.3, encapPk, rootKey,
+                                                                          hkdf(suffix(hkdf(hkdf(hkdf('g'^(
+                                                                                                          ~ecdhSk*
+                                                                                                          ~ecdhSk.1
+                                                                                                         ),
+                                                                                                     prefix(hkdf(hkdf(hkdf('g'^(
+                                                                                                                                ~preKey*
+                                                                                                                                ~ecdhSk.1
+                                                                                                                               ),
+                                                                                                                           '0'),
+                                                                                                                      ~kemSS),
+                                                                                                                 <
+                                                                                                                  $Them, 
+                                                                                                                  pk(~idKey.1), 
+                                                                                                                  $Me, 
+                                                                                                                  pk(~idKey)
+                                                                                                                 >))),
+                                                                                                '0'),
+                                                                                           <$Me, 
+                                                                                            pk(~idKey), 
+                                                                                            $Them, 
+                                                                                            pk(~idKey.1)
+                                                                                           >)),
+                                                                               'chain_key')
+                                                                 ) ▶₂ #vr.21 )
+                                                            case PublicKeyRatchetNewSenderNoNewKemSS
+                                                            SOLVED // trace found
                                                           next
-                                                            case c_sign
+                                                            case SendSymmetricRatchet
                                                             by sorry
                                                           qed
                                                         next
-                                                          case PublicKeyRatchetNewSenderSomeNewKemSS_case_2
+                                                          case PublicKeyRatchetNewSenderNoNewKemSS_case_2
+                                                          by sorry
+                                                        next
+                                                          case PublicKeyRatchetNewSenderNoNewKemSS_case_3
+                                                          by sorry
+                                                        next
+                                                          case PublicKeyRatchetNewSenderNoNewKemSS_case_4
+                                                          by sorry
+                                                        next
+                                                          case PublicKeyRatchetNewSenderNoNewKemSS_case_5
                                                           by sorry
                                                         next
                                                           case SendSymmetricRatchet
-                                                          by sorry
-                                                        next
-                                                          case c_exp
                                                           by sorry
                                                         qed
                                                       next
@@ -10410,12 +10242,15 @@ next
                                                       by sorry
                                                     qed
                                                   next
-                                                    case c_Just
+                                                    case PublicKeyRatchetNewSenderSomeNewKemSS_case_2
+                                                    by sorry
+                                                  next
+                                                    case SendSymmetricRatchet
+                                                    by sorry
+                                                  next
+                                                    case c_exp
                                                     by sorry
                                                   qed
-                                                next
-                                                  case c_Just
-                                                  by sorry
                                                 qed
                                               next
                                                 case c_Just
@@ -10430,11 +10265,11 @@ next
                                             by sorry
                                           qed
                                         next
-                                          case c_senc
+                                          case c_Just
                                           by sorry
                                         qed
                                       next
-                                        case c_hkdf
+                                        case c_Just
                                         by sorry
                                       qed
                                     next
@@ -10442,30 +10277,30 @@ next
                                       by sorry
                                     qed
                                   next
-                                    case PublicKeyRatchetNewSenderNoNewKemSS_case_2
-                                    by sorry
-                                  next
-                                    case PublicKeyRatchetNewSenderNoNewKemSS_case_3
-                                    by sorry
-                                  next
-                                    case PublicKeyRatchetNewSenderNoNewKemSS_case_4
-                                    by sorry
-                                  next
-                                    case PublicKeyRatchetNewSenderNoNewKemSS_case_5
-                                    by sorry
-                                  next
-                                    case SendSymmetricRatchet
-                                    by sorry
-                                  next
                                     case c_hkdf
                                     by sorry
                                   qed
                                 next
-                                  case c_sign
+                                  case c_senc
                                   by sorry
                                 qed
                               next
-                                case c_sign
+                                case PublicKeyRatchetNewSenderNoNewKemSS_case_2
+                                by sorry
+                              next
+                                case PublicKeyRatchetNewSenderNoNewKemSS_case_3
+                                by sorry
+                              next
+                                case PublicKeyRatchetNewSenderNoNewKemSS_case_4
+                                by sorry
+                              next
+                                case PublicKeyRatchetNewSenderNoNewKemSS_case_5
+                                by sorry
+                              next
+                                case SendSymmetricRatchet
+                                by sorry
+                              next
+                                case c_hkdf
                                 by sorry
                               qed
                             next
@@ -10473,71 +10308,130 @@ next
                               by sorry
                             qed
                           next
-                            case SendSymmetricRatchet
-                            by sorry
-                          next
                             case c_hkdf
                             by sorry
                           qed
                         next
-                          case PublicKeyRatchetNewSenderSomeNewKemSS_case_2
-                          by sorry
-                        next
                           case c_sign
                           by sorry
                         qed
+                      next
+                        case c_sign
+                        by sorry
                       qed
+                    next
+                      case c_sign
+                      by sorry
                     qed
                   next
-                    case PublicKeyRatchetNewSenderNoNewKemSS_case_2
-                    by sorry
-                  next
-                    case SendSymmetricRatchet
+                    case c_senc
                     by sorry
                   qed
+                next
+                  case SendSymmetricRatchet
+                  by sorry
+                next
+                  case c_hkdf
+                  by sorry
                 qed
               qed
             next
               case PublicKeyRatchetNewReceiverWithSomeNewKemSS
-              by sorry
+              by contradiction /* from formulas */
             next
               case ReceiveSymmetricRatchet
               by sorry
             qed
+          next
+            case PublicKeyRatchetNewSenderSomeNewKemSS_case_2
+            by sorry
+          next
+            case PublicKeyRatchetNewSenderSomeNewKemSS_case_3
+            by sorry
+          next
+            case PublicKeyRatchetNewSenderSomeNewKemSS_case_4
+            by sorry
+          next
+            case PublicKeyRatchetNewSenderSomeNewKemSS_case_5
+            by contradiction /* from formulas */
+          next
+            case PublicKeyRatchetNewSenderSomeNewKemSS_case_6
+            by contradiction /* from formulas */
+          next
+            case c_sign
+            by sorry
           qed
+        next
+          case PublicKeyRatchetNewSenderNoNewKemSS_case_2
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderNoNewKemSS_case_3
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderNoNewKemSS_case_4
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderNoNewKemSS_case_5
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderNoNewKemSS_case_6
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderNoNewKemSS_case_7
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderNoNewKemSS_case_8
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderSomeNewKemSS_case_1
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderSomeNewKemSS_case_2
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderSomeNewKemSS_case_3
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderSomeNewKemSS_case_4
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderSomeNewKemSS_case_5
+          by sorry
+        next
+          case PublicKeyRatchetNewSenderSomeNewKemSS_case_6
+          by sorry
+        next
+          case SendSymmetricRatchet
+          by sorry
+        next
+          case SessionStartAsASender
+          by sorry
         qed
+      next
+        case SessionStartAsASender
+        by sorry
       qed
-    next
-      case SendSymmetricRatchet
-      by sorry
     qed
   qed
 next
-  case ReceiveSymmetricRatchet
-  by solve( DecapKemSS( ~id, $Them, $Me, decap, pk ) @ #t3 )
-next
   case ReceiverStart
-  by sorry /* removed */
+  by sorry
 qed
 
 lemma ExecutabilityPublicKeyRatchetNoNewKEMSS:
   exists-trace
-  "∃ id1 id2 i s r rk m ad #t1 #t2 #t3.
-    (((((PublicKeyRatchetNewReceiver( id2, i, s, r, rk ) @ #t3) ∧
-        (¬(∃ decap pk. DecapKemSS( id2, s, r, decap, pk ) @ #t3))) ∧
-       (MessageReceived( id2, i, s, r, m, ad ) @ #t3)) ∧
-      (PublicKeyRatchetNewSender( id1, i, s, r, rk ) @ #t1)) ∧
-     (MessageSent( id1, i, s, r, m, ad ) @ #t2)) ∧
+  "∃ id i s r rk m ad #t.
+    (((PublicKeyRatchetNewReceiver( id, i, s, r, rk ) @ #t) ∧
+      (¬(∃ a b c d e. DecapKemSS( a, b, c, d, e ) @ #t))) ∧
+     (MessageReceived( id, i, s, r, m, ad ) @ #t)) ∧
     (¬(∃ #x. SomeCompromise( ) @ #x))"
 /*
 guarded formula characterizing all satisfying traces:
-"∃ id1 id2 i s r rk m ad #t1 #t2 #t3.
-  (PublicKeyRatchetNewReceiver( id2, i, s, r, rk ) @ #t3) ∧
-  (MessageReceived( id2, i, s, r, m, ad ) @ #t3) ∧
-  (PublicKeyRatchetNewSender( id1, i, s, r, rk ) @ #t1) ∧
-  (MessageSent( id1, i, s, r, m, ad ) @ #t2)
+"∃ id i s r rk m ad #t.
+  (PublicKeyRatchetNewReceiver( id, i, s, r, rk ) @ #t) ∧
+  (MessageReceived( id, i, s, r, m, ad ) @ #t)
  ∧
-  (∀ decap pk. (DecapKemSS( id2, s, r, decap, pk ) @ #t3) ⇒ ⊥) ∧
+  (∀ a b c d e. (DecapKemSS( a, b, c, d, e ) @ #t) ⇒ ⊥) ∧
   (∀ #x. (SomeCompromise( ) @ #x) ⇒ ⊥)"
 */
 by sorry

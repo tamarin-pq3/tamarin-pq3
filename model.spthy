@@ -483,24 +483,20 @@ rule PublicKeyRatchetNewReceiverWithSomeNewKemSS[color=#B4D9EF]:
 // SendSymmetricRatchet case.
 lemma ExecutabilityPublicKeyRatchetSomeNewKEMSS:
   exists-trace
-  "Ex id1 id2 i s r rk m ad #t1 #t2 #t3.
-      PublicKeyRatchetNewReceiver(id2, i, s, r, rk) @ #t3
-    & (Ex decap pk. DecapKemSS(id2, s, r, decap, pk) @ #t3)
-    & MessageReceived(id2, i, s, r, m, ad) @ #t3
-    & PublicKeyRatchetNewSender(id1, i, s, r, rk) @ #t1
-    & MessageSent(id1, i, s, r, m, ad) @ #t2
+  "Ex id i s r rk m ad #t.
+      PublicKeyRatchetNewReceiver(id, i, s, r, rk) @ #t
+    & (Ex decap pk. DecapKemSS(id, r, s, decap, pk) @ #t)
+    & MessageReceived(id, i, s, r, m, ad) @ #t
     & (not Ex #x. SomeCompromise() @ #x)"
 
 // Provable (manually). Avoid the loop in the SendSymmetriccRatchet case at the
 // very end.
 lemma ExecutabilityPublicKeyRatchetNoNewKEMSS:
   exists-trace
-  "Ex id1 id2 i s r rk m ad #t1 #t2 #t3.
-      PublicKeyRatchetNewReceiver(id2, i, s, r, rk) @ #t3
-    & (not Ex decap pk. DecapKemSS(id2, s, r, decap, pk) @ #t3)
-    & MessageReceived(id2, i, s, r, m, ad) @ #t3
-    & PublicKeyRatchetNewSender(id1, i, s, r, rk) @ #t1
-    & MessageSent(id1, i, s, r, m, ad) @ #t2
+  "Ex id i s r rk m ad #t.
+      PublicKeyRatchetNewReceiver(id, i, s, r, rk) @ #t
+    & (not Ex a b c d e. DecapKemSS(a, b, c, d, e) @ #t)
+    & MessageReceived(id, i, s, r, m, ad) @ #t
     & (not Ex #x. SomeCompromise() @ #x)"
 
 lemma Auto_SessionStart[reuse,use_induction]:
