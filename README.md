@@ -28,26 +28,29 @@ We used Tamarin version 1.8.0 and Maude versions 3.1 and 3.2.1.
 
 ## Constructing & Checking Proofs
 
-You can verify that our model has no well-formedness issues by running:
+To verify our proofs of iMessage PQ3's security (as described in Section 5 of our paper), follow the four steps below.
+
+First, verify that our model has no well-formedness issues by running:
 
 ```sh
 ./wellformedness.sh
 ```
 
-You can construct most automatically provable lemmas by running:
+Second, construct most automatically provable lemmas by running:
 ```sh
 ./prove-auto.sh
 ```
 
-There is also one automatically provable lemma for which proof search is computationally expensive.
-Proving this lemma took us around 1-2 days.
-You can prove this lemma by running:
+There is one automatically provable lemma for which proof search is computationally expensive.
+Proving this lemma took around 1-2 days using our setup.
+As a third step, prove this lemma by running:
 ```sh
-./prove-expensive
+./prove-expensive.sh
 ```
 
 Some lemmas are not automatically provable (those not prefixed by `Auto_` or `Expensive_Auto_`).
 We provide already constructed proofs for these lemmas in `/proofs`.
+As a final step, verify all these proofs.
 See the README in that folder for more information on how to verify these proofs.
 
 ## Computational Resources Required
