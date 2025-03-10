@@ -1,7 +1,10 @@
 # Formal Analysis of the iMessage PQ3 Protocol
 
-This repository contains the formal models, proofs, and a pseudocode specification of iMessage PQ3, a state-of-the-art messaging protocol providing strong security guarantees even against adversaries with quantum-computing capabilities.
-This work is currently under submission for scientific publication.
+This repository contains the formal models for the Tamarin prover, associated proofs, and a pseudocode specification of iMessage PQ3, a state-of-the-art messaging protocol providing strong security guarantees even against adversaries with quantum-computing capabilities.
+
+This work is part of a scientific paper available as a pre-print here: https://eprint.iacr.org/2024/1395
+
+The paper has been accepted for publication at USENIX Security 2025.
 
 ## Prerequisites
 
@@ -57,7 +60,7 @@ Memory consumption is estimated from the process's maximum resident set size.
 Note that Tamarin can use RAM inefficiently.
 Tamarin stores the entire proof tree, but a proof only needs to access a path in the proof tree.
 Therefore, memory compression can help you check proofs on machines with much less physical memory than indicated.
-For example, some proofs were also constructed on a Macbook with 32 GB of RAM, where we observed 100 GB of virtual memory usage but only 5-10 GB of physical memory usage.
+For example, some proofs were constructed on a Macbook with 32 GB of RAM, where we observed 100 GB of virtual memory usage but only 5-10 GB of physical memory usage.
 
 | Script | Time | Memory |
 | ------ | ---- | ------ |
