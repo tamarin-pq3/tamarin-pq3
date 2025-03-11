@@ -36,8 +36,7 @@ type Message = {
 }
 
 def sendMessage(
-  lastRcvd: Message | None, msg: string,
-  me: DeviceInfo, peer: DeviceInfo,
+  lastRcvd: Message | None, msg: string, me: DeviceInfo, peer: DeviceInfo,
 ) -> Message:
   sess = lookupSession(me, peer, lastRcvd)
   preKeyHash = None
@@ -46,21 +45,17 @@ def sendMessage(
     sess = sessionStartSender(me, peer, pkBundle)
     storeSession(me, peer, sess)
     preKeyHash = SHA384(
-        repr(pkBundle.ecdhKey)
-      + repr(pkBundle.kemKey)
-      + pkBundle.signature
+      repr(pkBundle.ecdhKey) + repr(pkBundle.kemKey) + pkBundle.signature
     )
 
   encapResult = None
   if not sess.inSenderRole:
-    encapResult, newKemKey
-      = pkRatchetToSender(lastRcvd, sess)
+    encapResult, newKemKey = pkRatchetToSender(lastRcvd, sess)
 
   mk = symmetricRatchet(sess)
   ciphertext, msgKeyIndicator = encrypt(msg, mk)
 
-  signature_body =
-      b'messageSignature'
+  signature_body = b'messageSignature'
     + b'v1'
     + len(ciphertext) + ciphertext
     + msgKeyIndicator
@@ -68,31 +63,24 @@ def sendMessage(
     + sess.messageIndex
     + dstForSession(me, peer)
     + len(newKemKey)
-    + newKemKey.publicKey()
-      if newKemKey is not None else b''
+    + newKemKey.publicKey() if newKemKey is not None else b''
     + len(encapResult)
-    + encapResult
-      if encapResult is not None else b''
-    + preKeyHash
-      if preKeyHash is not None else b''
+    + encapResult if encapResult is not None else b''
+    + preKeyHash if preKeyHash is not None else b''
 
   return {
     ciphertext: ciphertext,
     signature: P256.sign(signature_body, me.ltk),
     ecdhPK: sess.ecdhKey.publicKey(),
-    kemPK:  None if newKemKey is None
-            else newKemKey.publicKey(),
+    kemPK: None if newKemKey is None else newKemKey.publicKey(),
     kemEncap: encapResult,
     messageIndex: sess.messageIndex++,
     preKeyHash: preKeyHash,
     msgKeyIndicator: msgKeyIndicator,
   }
 
-def receiveMsg(
-  msg: Message, me: DeviceInfo, peer: DeviceInfo,
-) -> byte[]:
-  signature_body =
-      b'messageSignature'
+def receiveMsg(msg: Message, me: DeviceInfo, peer: DeviceInfo) -> byte[]:
+  signature_body = b'messageSignature'
     + b'v1'
     + len(msg.ciphertext) + msg.ciphertext
     + len(msg.authData) + msg.authData
@@ -121,8 +109,7 @@ def receiveMsg(
   return decrypt(msg, mk)
 
 def sessionStartSender(
-  sender: DeviceInfo, receiver: DeviceInfo,
-  pkBundle: PreKeyBundle,
+  sender: DeviceInfo, receiver: DeviceInfo, pkBundle: PreKeyBundle,
 ) -> Session:
   session = {
     me: sender,
@@ -133,8 +120,7 @@ def sessionStartSender(
   }
 
   ecdhKey = P256.new_key()
-  ecdhSS =
-    ecdhKey.shared_secret_with(pkBundle.ecdhKey)
+  ecdhSS = ecdhKey.shared_secret_with(pkBundle.ecdhKey)
   kemSS, encapResult = pkBundle.kemKey.encap()
   dst = dstForSession(me, peer)
     + b'session_start'
@@ -143,8 +129,7 @@ def sessionStartSender(
     + repr(encapResult)
     + repr(pkBundle.kemKey.publicKey())
 
-  rk, ck =
-    rootAndChainKey(b'0' * 32, ecdhSS, kemSS, dst)
+  rk, ck = rootAndChainKey(b'0' * 32, ecdhSS, kemSS, dst)
 
   session.ecdhKey = ecdhKey
   session.rk = rk
@@ -153,8 +138,7 @@ def sessionStartSender(
   return session
 
 def sessionStartReceiver(
-  msg: Message, sender: DeviceInfo,
-  receiver: DeviceInfo,
+  msg: Message, sender: DeviceInfo, receiver: DeviceInfo,
 ) -> Session:
   session = {
     me: receiver,
@@ -165,10 +149,8 @@ def sessionStartReceiver(
   }
 
   bundle = getPreKeyBundleFromHash(msg.preKeyHash)
-  ecdhSS =
-    bundle.ecdhKey.shared_secret_with(msg.ecdhPK)
-  kemSS =
-    bundle.kemKey.decapsulate(msg.kemEncap)
+  ecdhSS = bundle.ecdhKey.shared_secret_with(msg.ecdhPK)
+  kemSS = bundle.kemKey.decapsulate(msg.kemEncap)
   dst = dstForSession(sender, receiver)
     + b'session_start'
     + repr(pkBundle.ecdhKey.publicKey())
@@ -176,17 +158,14 @@ def sessionStartReceiver(
     + repr(msg.kemEncap)
     + repr(pkBundle.kemKey.publicKey())
 
-  rk, ck =
-    rootAndChainKey(b'0' * 32, ecdhSS, kemSS, dst)
+  rk, ck = rootAndChainKey(b'0' * 32, ecdhSS, kemSS, dst)
 
   session.rk = rk
   session.ck = ck
 
   return session
 
-def pkRatchetToSender(
-  msg: Message, sess: Session,
-) -> byte[], KEM.Key:
+def pkRatchetToSender(msg: Message, sess: Session) -> byte[], KEM.Key:
   ecdhKey = P256.new_key()
   dst = dstForSession(sess.me, sess.peer)
     + b'pk_ratchet'
@@ -198,8 +177,7 @@ def pkRatchetToSender(
   encapResult = None
   if sess.newKemKey is not None:
     kemSS, encapResult = msg.kemKey.Encap()
-    dst += encapResult
-        + repr(msg.kemPK)
+    dst += encapResult + repr(msg.kemPK)
     sess.newKemKey = None
 
   newKemKey = None
@@ -208,8 +186,7 @@ def pkRatchetToSender(
     sess.myKemKey = newKemKey
     sess.expectKemSS = True
 
-  rk, ck =
-    rootAndChainKey(sess.rk, ecdhSS, kemSS, dst),
+  rk, ck = rootAndChainKey(sess.rk, ecdhSS, kemSS, dst),
 
   sess.ecdhKey = ecdhKey
   sess.rk = rk
@@ -227,16 +204,13 @@ def pkRatchetToReceiver(msg: Message, sess):
   ecdhSS = ecdhKey.shared_secret_with(msg.ecdhPK)
   kemSS = None
   if msg.kemEncap is not None:
-    kemSS =
-      sess.myKemKey.decapsulate(msg.kemEncap)
-    dst += repr(msg.kemEncap)
-      + repr(sess.myKemKey.publicKey())
+    kemSS = sess.myKemKey.decapsulate(msg.kemEncap)
+    dst += repr(msg.kemEncap) + repr(sess.myKemKey.publicKey())
     sess.expectKemSS = False
   elif sess.expectKemSS:
     raise Error()
 
-  rk, ck =
-    rootAndChainKey(rootKey, ecdhSS, kemSS, dst)
+  rk, ck = rootAndChainKey(rootKey, ecdhSS, kemSS, dst)
 
   if msg.kemPK is not None:
     sess.newKemKey = msg.kemPK
@@ -245,76 +219,39 @@ def pkRatchetToReceiver(msg: Message, sess):
   sess.ck = ck
   sess.inSenderRole = False
 
-def dstForSession(
-  sender: DeviceInfo, receiver: DeviceInfo,
-) -> byte[]:
+def dstForSession(sender: DeviceInfo, receiver: DeviceInfo) -> byte[]:
   return sender.client_uri + sender.device_id
     + repr(sender.ltk) + receiver.client_uri
     + receiver.device_id + repr(receiver.ltk)
 
 def rootAndChainKey(
-  oldRk: byte[], ecdhSS: byte[],
-  kemSS: byte[], dst: byte[],
+  oldRk: byte[], ecdhSS: byte[], kemSS: byte[], dst: byte[],
 ) -> byte[]:
-  extracted = HKDF.SHA384.extract(
-    IKM: ecdhSS,
-    salt: oldRk
-  )
-  extracted = HKDF.SHA384.extract(
-    IKM: extracted,
-    salt: kemSS
-  )
-  rkCK = HKDF.SHA384.expand(
-    PRK: extracted,
-    info: b'rkDerivation-' + dst,
-    L: 64
-  )
+  extracted = HKDF.SHA384.extract(IKM: ecdhSS, salt: oldRk)
+  extracted = HKDF.SHA384.extract(IKM: extracted, salt: kemSS)
+  rkCK = HKDF.SHA384.expand(PRK: extracted, info: b'rkDerivation-' + dst, L: 64)
 
   rootKey = rkCK.prefix(32)
   chainKey = rkCK.suffix(32)
   return rootKey, chainKey
 
 def symmetricRatchet(sess: Session) -> byte[]:
-  mk = HKDF.SHA384.expand(
-    PRK: sess.ck,
-    info: b'msgKeyDerivation',
-    L: 32,
-  )
+  mk = HKDF.SHA384.expand(PRK: sess.ck, info: b'msgKeyDerivation', L: 32)
 
-  sess.ck = HKDF.SHA384.expand(
-    PRK: sess.ck,
-    info: b'chainKeyDerivation',
-    L: 32,
-  )
+  sess.ck = HKDF.SHA384.expand(PRK: sess.ck, info: b'chainKeyDerivation', L: 32)
 
   return mk
 
-def encrypt(
-  msg: string, msgKey: byte[],
-) -> byte[]:
-  expanded = HKDF.expand(
-    PRK: msgKey,
-    info: b'aes-ctr',
-    L: 48
-  )
+def encrypt(msg: string, msgKey: byte[]) -> byte[]:
+  expanded = HKDF.expand(PRK: msgKey, info: b'aes-ctr', L: 48)
   iv = expanded.prefix(16)
   key = expanded.suffix(32)
-  msgKeyIndicator = HKDF.SHA.384.expand(
-    PRK: msgKey,
-    info: b'msg-key-ind',
-    L: 32,
-  )
+  msgKeyIndicator = HKDF.SHA.384.expand(PRK: msgKey, info: b'msg-key-ind', L: 32)
   ciphertext = AES_CTR.encrypt(msg, key, iv)
   return ciphertext, msgKeyIndicator
 
-def decrypt(
-  ciphertext: byte[], msgKey: byte[],
-) -> string:
-  expanded = HKDF.expand(
-    PRK: msgKey,
-    info: b'aes-ctr',
-    L: 48
-  )
+def decrypt(ciphertext: byte[], msgKey: byte[]) -> string:
+  expanded = HKDF.expand(PRK: msgKey, info: b'aes-ctr', L: 48)
   iv = expanded.prefix(16)
   key = expanded.suffix(32)
   return AES_CTR.decrypt(ciphertext, key, iv)
