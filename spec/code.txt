@@ -107,6 +107,9 @@ def receiveMsg(msg: Message, me: DeviceInfo, peer: DeviceInfo) -> byte[]:
     pkRatchetToReceiver(msg, sess)
 
   mk = symmetricRatchet(sess)
+  if msg.msgKeyIndicator != getKeyIndictator(mk):
+    raise Error()
+
   return decrypt(msg, mk)
 
 def sessionStartSender(
@@ -243,11 +246,14 @@ def symmetricRatchet(sess: Session) -> byte[]:
 
   return mk
 
+def getKeyIndictator(msgKey: byte[]) -> byte[]:
+  return HKDF.SHA.384.expand(PRK: msgKey, info: b'msg-key-ind', L: 32)
+
 def encrypt(msg: string, msgKey: byte[]) -> byte[]:
   expanded = HKDF.expand(PRK: msgKey, info: b'aes-ctr', L: 48)
   iv = expanded.prefix(16)
   key = expanded.suffix(32)
-  msgKeyIndicator = HKDF.SHA.384.expand(PRK: msgKey, info: b'msg-key-ind', L: 32)
+  msgKeyIndicator = getKeyIndictator(msgKey)
   ciphertext = AES_CTR.encrypt(msg, key, iv)
   return ciphertext, msgKeyIndicator
 
