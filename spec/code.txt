@@ -58,6 +58,7 @@ def sendMessage(
   signature_body = b'messageSignature'
     + b'v1'
     + len(ciphertext) + ciphertext
+    + len(msg.authData) + msg.authData
     + msgKeyIndicator
     + repr(sess.ecdhKey.publicKey())
     + sess.messageIndex
